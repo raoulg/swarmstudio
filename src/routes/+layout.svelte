@@ -1,21 +1,20 @@
 <script lang="ts">
-	import Header from './Header.svelte';
-	import '../app.css';
+	import Header from '$lib/components/Header.svelte';
+	import '../app.css'; // This imports your global styles and TailwindCSS
 
+	// Svelte 5 syntax for rendering child components (like +page.svelte)
 	let { children } = $props();
 </script>
 
-<div class="app">
+<div class="app bg-background-dark text-text-color">
 	<Header />
 
 	<main>
 		{@render children()}
 	</main>
 
-	<footer>
-		<p>
-			visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to learn about SvelteKit
-		</p>
+	<footer class="text-center p-4 text-sm text-text-color/50">
+		<p>SwarmCraft - An Interactive Swarm Intelligence Experience</p>
 	</footer>
 </div>
 
@@ -24,34 +23,22 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
+		width: 100%;
 	}
 
 	main {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
+		align-items: center; /* Center content horizontally */
+		justify-content: center; /* Center content vertically */
 		padding: 1rem;
 		width: 100%;
-		max-width: 64rem;
-		margin: 0 auto;
-		box-sizing: border-box;
 	}
 
 	footer {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		padding: 12px;
-	}
-
-	footer a {
-		font-weight: bold;
-	}
-
-	@media (min-width: 480px) {
-		footer {
-			padding: 12px 0;
-		}
+		width: 100%;
+		background-color: var(--primary-dark);
+		margin-top: auto; /* Pushes the footer to the bottom */
 	}
 </style>
