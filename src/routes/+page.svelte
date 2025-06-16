@@ -5,12 +5,25 @@
 	let sessionCode = '';
 	let errorMessage = '';
 	let isLoading = false;
-
+	let movementState = 'waiting'; // 'waiting', 'moving', 'revealing'
+	let targetPosition = null;
+	let currentChaosLevel = 0; // 0-4 for 5 discrete levels
+	
 	// Reactive variables based on the session store
 	$: session = $sessionState;
 	$: participants = session.participants || [];
 	$: config = session.config;
 	$: gridSize = config?.grid_size || 25;
+	$: me = participants.find((p) => p.id === $participantId);
+
+	// Chaos level descriptions and visual styles
+	const chaosLevels = [
+		{ name: "Crystal Order", emoji: "💎", description: "Precise movement", bg: "bg-blue-500" },
+		{ name: "Structured", emoji: "🏗️", description: "Organized approach", bg: "bg-green-500" },
+		{ name: "Balanced", emoji: "⚖️", description: "Mixed strategy", bg: "bg-yellow-500" },
+		{ name: "Turbulent", emoji: "🌪️", description: "High exploration", bg: "bg-orange-500" },
+		{ name: "Primordial Chaos", emoji: "🌋", description: "Pure randomness", bg: "bg-red-500" }
+	];
 
 	// Function to handle joining a session
 	async function handleJoin() {
@@ -21,12 +34,7 @@
 		isLoading = true;
 		errorMessage = '';
 		try {
-			// The client.ts file handles the actual API call and WebSocket connection
-			const joinResponse = await joinSession(sessionCode.toUpperCase());
-			console.log('=== PARTICIPANT JOIN DEBUG ===');
-			console.log('Join response:', joinResponse);
-			console.log('Current participantId:', $participantId);
-			console.log('Current sessionState:', $sessionState);
+			await joinSession(sessionCode.toUpperCase());
 		} catch (error) {
 			errorMessage = 'Failed to join session. Please check the code and try again.';
 			console.error(error);
@@ -35,8 +43,26 @@
 		}
 	}
 
-	// Helper function to get the participant's own data
-	$: me = participants.find((p) => p.id === $participantId);
+	// Handle movement instruction (triggered by WebSocket)
+	function handleMovementInstruction(newPosition, chaosLevel) {
+		targetPosition = newPosition;
+		currentChaosLevel = chaosLevel;
+		movementState = 'moving';
+		autoConfirmArrival(); // Auto-return to waiting
+	}
+
+	// Auto-confirm arrival after movement instruction
+	function autoConfirmArrival() {
+		setTimeout(() => {
+			movementState = 'waiting';
+		}, 5000); // Auto-return after 5 seconds
+	}
+
+	// Handle fitness revelation (triggered by admin reveal)
+	function handleFitnessRevelation() {
+		movementState = 'revealing';
+		// Keep revelation screen until manually changed
+	}
 </script>
 
 <svelte:head>
@@ -46,6 +72,7 @@
 
 <main class="w-full max-w-4xl mx-auto p-4 flex flex-col items-center gap-8">
 	{#if !$participantId}
+		<!-- Join Session Interface -->
 		<div class="w-full max-w-md text-center">
 			<h1 class="text-4xl font-bold text-accent-color mb-6">Join a Swarm</h1>
 			<div class="flex items-stretch gap-2">
@@ -69,45 +96,167 @@
 				<p class="text-red-400 mt-3">{errorMessage}</p>
 			{/if}
 		</div>
-	{:else if config}
-		<div class="w-full flex flex-col items-center gap-6">
-			<header class="text-center">
-				<h1 class="text-3xl font-bold">You are in Session: <span class="text-accent-color">{session.code}</span></h1>
-				<p>Your name: <span class="font-bold">{me?.name || '...'}</span></p>
-			</header>
 
-			<div
-				class="grid border-2 border-secondary-dark bg-primary-dark"
-				style="grid-template-columns: repeat({gridSize}, 1fr); width: 100%; max-width: 600px; aspect-ratio: 1 / 1;"
-			>
-				{#each Array(gridSize * gridSize) as _, i}
-					{@const row = Math.floor(i / gridSize)}
-					{@const col = i % gridSize}
-					{@const p = participants.find(part => part.position && part.position[0] === row && part.position[1] === col)}
-					
-					<div class="relative w-full h-full border border-secondary-dark/50">
-						{#if p}
-							<div
-								class="absolute inset-0 m-auto w-3/4 h-3/4 rounded-full transition-colors duration-500"
-								style="background-color: {p.color || '#888'};"
-								title={p.name}
-							></div>
-						{/if}
-					</div>
-				{/each}
+	{:else if movementState === 'moving' && targetPosition}
+		<!-- Movement Instruction Screen -->
+		<div class="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-blue-900 text-white relative">
+			<!-- Name in top corner -->
+			<div class="absolute top-4 left-4 text-sm opacity-75">
+				{me?.name}
 			</div>
 
+			<div class="text-center space-y-8">
+				<!-- Target Coordinates -->
+				<div class="space-y-4">
+					<h1 class="text-2xl font-semibold text-gray-300">Move to Position:</h1>
+					<div class="text-8xl font-bold font-mono tracking-wider">
+						[{targetPosition[0]}, {targetPosition[1]}]
+					</div>
+				</div>
+
+				<!-- Chaos Level Indicator -->
+				<div class="space-y-4">
+					<h2 class="text-xl text-gray-300">Your Movement Style:</h2>
+					<div class="flex flex-col items-center space-y-2">
+						<!-- Placeholder for future image -->
+						<div class="w-32 h-32 border-4 border-gray-400 rounded-lg flex items-center justify-center bg-gray-600">
+							<div class="text-5xl">{chaosLevels[currentChaosLevel].emoji}</div>
+						</div>
+						<div class="text-2xl font-semibold">{chaosLevels[currentChaosLevel].name}</div>
+						<div class="w-64 h-3 bg-gray-700 rounded-full overflow-hidden">
+							<div 
+								class="h-full transition-all duration-500 {chaosLevels[currentChaosLevel].bg}"
+								style="width: {((currentChaosLevel + 1) / 5) * 100}%"
+							></div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Movement Speed Display -->
+				{#if me?.velocity_magnitude}
+					<div class="space-y-2">
+						<h2 class="text-lg text-gray-300">Movement Speed</h2>
+						<div class="text-3xl font-bold">
+							{me.velocity_magnitude.toFixed(2)}
+						</div>
+					</div>
+				{/if}
+
+				<!-- No action button needed - auto-advances -->
+			</div>
+		</div>
+
+	{:else if movementState === 'revealing'}
+		<!-- Fitness Revelation Screen -->
+		<div 
+			class="w-full h-screen flex flex-col items-center justify-center text-white relative"
+			style="background: linear-gradient(135deg, {me?.color || '#888'}, {me?.color || '#888'}88);"
+		>
+			<!-- Name in top corner -->
+			<div class="absolute top-4 left-4 text-sm opacity-75">
+				{me?.name}
+			</div>
+
+			<div class="text-center space-y-8">
+				<!-- Position Display -->
+				<div class="space-y-2">
+					<h2 class="text-xl text-gray-200">Your Position</h2>
+					<div class="text-4xl font-mono font-bold">
+						[{me?.position ? me.position.join(', ') : 'N/A'}]
+					</div>
+				</div>
+
+				<!-- Fitness Score -->
+				<div class="space-y-2">
+					<h2 class="text-xl text-gray-200">Fitness Score</h2>
+					<div class="text-6xl font-bold animate-pulse">
+						{me?.fitness ? me.fitness.toFixed(2) : '???'}
+					</div>
+				</div>
+
+				<!-- Feedback Message with Image Border -->
+				<div class="space-y-4">
+					{#if me?.fitness}
+						<!-- Placeholder for future feedback image -->
+						<div class="w-32 h-32 border-4 border-white rounded-lg flex items-center justify-center bg-white/20 mx-auto">
+							<div class="text-4xl">
+								{me.fitness < 0.5 ? '🎯' : 
+								 me.fitness < 1.0 ? '👍' : 
+								 me.fitness < 2.0 ? '🔍' : 
+								 '🚀'}
+							</div>
+						</div>
+						<div class="text-xl font-semibold">
+							{me.fitness < 0.5 ? 'Great position!' : 
+							 me.fitness < 1.0 ? 'Good spot!' : 
+							 me.fitness < 2.0 ? 'Keep exploring!' : 
+							 'Keep searching!'}
+						</div>
+					{/if}
+				</div>
+
+				<!-- Speed Display (smaller) -->
+				{#if me?.velocity_magnitude}
+					<div class="space-y-1 opacity-75">
+						<h2 class="text-sm text-gray-200">Speed</h2>
+						<div class="text-lg">
+							{me.velocity_magnitude.toFixed(2)}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+
+	{:else if config}
+		<!-- Default State: Show simple status, will be replaced by move/reveal screens -->
+		<div class="w-full flex flex-col items-center gap-6">
+			<header class="text-center">
+				<h1 class="text-3xl font-bold">Session: <span class="text-accent-color">{session.code}</span></h1>
+			</header>
+
 			{#if me}
-				<div class="card bg-secondary-dark p-4 rounded-lg w-full max-w-md">
-					<h3 class="font-bold text-lg">{me.name} (You)</h3>
-					<p>Position: [{me.position ? me.position.join(', ') : 'N/A'}]</p>
-					<p>Fitness Score: {me.fitness ? me.fitness.toFixed(2) : 'N/A'}</p>
+				<div class="card bg-secondary-dark p-6 rounded-lg w-full max-w-lg">
+					<h2 class="font-bold text-2xl mb-4 text-center">{me.name}</h2>
+					<div class="space-y-4 text-lg">
+						<div class="flex justify-between items-center">
+							<span>Position:</span>
+							<span class="font-mono text-xl">[{me.position ? me.position.join(', ') : 'Waiting...'}]</span>
+						</div>
+						<div class="flex justify-between items-center">
+							<span>Fitness Score:</span>
+							<span class="font-mono text-xl font-bold">{me.fitness ? me.fitness.toFixed(2) : 'N/A'}</span>
+						</div>
+					</div>
 				</div>
 			{/if}
+
+			<div class="text-center text-gray-400">
+				<p class="text-lg">Waiting for next instruction...</p>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Test buttons for development -->
+	{#if $participantId && config}
+		<div class="fixed bottom-4 right-4 space-x-2 opacity-75">
+			<button 
+				on:click={() => handleMovementInstruction([5, 7], 2)} 
+				class="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+			>
+				Test Move
+			</button>
+			<button 
+				on:click={handleFitnessRevelation} 
+				class="bg-green-600 text-white px-3 py-1 rounded text-sm"
+			>
+				Test Reveal
+			</button>
+			<button 
+				on:click={() => movementState = 'waiting'} 
+				class="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+			>
+				Back to Waiting
+			</button>
 		</div>
 	{/if}
 </main>
-
-<style>
-	/* You can add component-specific (non-Tailwind) styles here if needed */
-</style>
