@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { createSession, startSession, triggerStep, resetSession } from '$lib/api/client';
-	import { sessionState } from '$lib/stores/sessionStore';
+	import { createSession, startSession, triggerStep, resetSession, connectAdminWebSocket } from '$lib/api/client';
+	import { sessionState, latestSession } from '$lib/stores/sessionStore';
 
 	let adminKey = '';
 	let landscapeType = 'quadratic';
@@ -11,26 +11,13 @@
 		isLoading = true;
 		try {
 			const data = await createSession(adminKey, landscapeType, maxIterations);
-			alert(`Session created! Code: ${data.session_code}, ID: ${data.session_id}`);
+			latestSession.set({ code: data.session_code, id: data.session_id });
+			connectAdminWebSocket(data.session_id);
 			// Admin joins their own session to get updates
-			await joinSessionAsAdmin(data.session_id);
 		} catch (e) {
 			alert(e.message);
 		}
 		isLoading = false;
-	}
-
-	// Admin needs to "join" to be part of the WebSocket broadcast group
-	async function joinSessionAsAdmin(sessionId: string) {
-		const partId = `admin_${Math.random().toString(36).substring(2, 8)}`;
-		connectWebSocket(sessionId, partId);
-		const statusRes = await fetch(`http://localhost:8000/api/session/${sessionId}/status`);
-		const data = await statusRes.json();
-		sessionState.update((s) => ({
-			...s,
-			id: sessionId,
-			config: { grid_size: data.grid_size, landscape_type: data.landscape_type }
-		}));
 	}
 
 	async function handleAction(action: 'start' | 'step' | 'reset') {

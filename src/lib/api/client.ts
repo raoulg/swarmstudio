@@ -37,6 +37,12 @@ export function connectWebSocket(sessionId: string, partId: string) {
 					participants: data.participants
 				}));
 				break;
+			case 'participant_joined':
+				sessionState.update((s) => ({
+					...s,
+					participants: data.participants
+				}));
+				break;
 			case 'participant_moved':
 				sessionState.update((s) => ({
 					...s,
@@ -119,4 +125,12 @@ export async function resetSession(adminKey: string, sessionId: string) {
 	});
 	if (!response.ok) throw new Error('Failed to reset session');
 	return response.json();
+}
+
+
+export function connectAdminWebSocket(sessionId: string) {
+	// Generate a unique ID for the admin's WebSocket connection
+	const adminId = `admin_${crypto.randomUUID()}`;
+	logEvent(`Admin connecting to WebSocket for session ${sessionId}`);
+	connectWebSocket(sessionId, adminId);
 }
