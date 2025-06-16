@@ -84,6 +84,14 @@ button {
 	font-family: inherit;
 }
 
+input {
+	background-color: var(--color-bg-1); /* Uses your primary dark background color */
+	color: var(--color-text); /* Uses your defined text color */
+	border: 1px solid var(--color-bg-2); /* A border that matches your theme */
+	border-radius: 0.25rem; /* Optional: for rounded corners */
+	padding: 0.5rem; /* Optional: for some spacing */
+}
+
 button:focus:not(:focus-visible) {
 	outline: none;
 }
