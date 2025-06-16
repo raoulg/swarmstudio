@@ -1,4 +1,5 @@
-import { sessionState, participantId, logEvent } from '$lib/stores/sessionStore';
+import { sessionState, latestSession, participantId, logEvent } from '$lib/stores/sessionStore';
+import { get } from 'svelte/store';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 const WS_BASE_URL = 'ws://localhost:8000';
@@ -6,6 +7,14 @@ const WS_BASE_URL = 'ws://localhost:8000';
 let websocket: WebSocket | null = null;
 
 // --- WebSocket Management ---
+// Add to client.ts (or create a separate types file)
+interface SessionSummary {
+	session_id: string;
+	session_code: string;
+	status: string;
+	participant_count: number;
+	created_at: string;
+}
 
 export function connectWebSocket(sessionId: string, partId: string) {
 	if (websocket) {
@@ -28,6 +37,9 @@ export function connectWebSocket(sessionId: string, partId: string) {
 			case 'session_state':
 			case 'session_started':
 			case 'session_reset':
+				console.log('=== WEBSOCKET SESSION DATA ===');
+				console.log('Received data.session:', data.session);
+				console.log('Current sessionState before update:', sessionState);
 				sessionState.set(data.session);
 				break;
 			case 'swarm_update':
@@ -38,6 +50,10 @@ export function connectWebSocket(sessionId: string, partId: string) {
 				}));
 				break;
 			case 'participant_joined':
+				console.log('=== PARTICIPANT_JOINED DEBUG ===');
+				console.log('Raw message data:', data);
+				console.log('data.participants:', data.participants);
+				console.log('Current sessionState before update:', get(sessionState));
 				sessionState.update((s) => ({
 					...s,
 					participants: data.participants
@@ -133,4 +149,32 @@ export function connectAdminWebSocket(sessionId: string) {
 	const adminId = `admin_${crypto.randomUUID()}`;
 	logEvent(`Admin connecting to WebSocket for session ${sessionId}`);
 	connectWebSocket(sessionId, adminId);
+}
+
+export async function listSessions(adminKey: string) {
+	const response = await fetch(`${API_BASE_URL}/admin/sessions`, {
+		headers: { 'X-Admin-Key': adminKey }
+	});
+	if (!response.ok) throw new Error('Failed to list sessions');
+	return response.json();
+}
+
+export async function deleteSession(adminKey: string, sessionId: string) {
+	const response = await fetch(`${API_BASE_URL}/admin/session/${sessionId}`, {
+		method: 'DELETE',
+		headers: { 'X-Admin-Key': adminKey }
+	});
+	if (!response.ok) throw new Error('Failed to delete session');
+	return response.json();
+}
+
+export async function reconnectToSession(sessionData: SessionSummary) {
+	sessionState.set({
+		id: sessionData.session_id,
+		code: sessionData.session_code,
+		status: sessionData.status,
+		participants: []
+	});
+	latestSession.set({ code: sessionData.session_code, id: sessionData.session_id });
+	connectAdminWebSocket(sessionData.session_id);
 }

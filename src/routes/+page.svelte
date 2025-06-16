@@ -22,7 +22,11 @@
 		errorMessage = '';
 		try {
 			// The client.ts file handles the actual API call and WebSocket connection
-			await joinSession(sessionCode.toUpperCase());
+			const joinResponse = await joinSession(sessionCode.toUpperCase());
+			console.log('=== PARTICIPANT JOIN DEBUG ===');
+			console.log('Join response:', joinResponse);
+			console.log('Current participantId:', $participantId);
+			console.log('Current sessionState:', $sessionState);
 		} catch (error) {
 			errorMessage = 'Failed to join session. Please check the code and try again.';
 			console.error(error);

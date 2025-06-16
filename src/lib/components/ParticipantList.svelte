@@ -3,7 +3,7 @@
 </script>
 
 <div class="card h-full overflow-y-auto">
-	<h3 class="text-xl font-bold mb-4">Participants ({$sessionState.participants.length})</h3>
+	<h3 class="text-xl font-bold mb-4">Participants ({$sessionState.participants?.length ?? 0})</h3>
 	<div class="w-full text-sm text-left">
 		<div class="bg-secondary-dark font-bold grid grid-cols-5 p-2 rounded-t-lg">
 			<div>Name</div>
@@ -13,7 +13,7 @@
 			<div>Color</div>
 		</div>
 		<div class="max-h-[60vh] overflow-y-auto">
-			{#each $sessionState.participants as p (p.id)}
+			{#each $sessionState.participants || [] as p (p.id)}
 				<div
 					class="grid grid-cols-5 p-2 border-b border-secondary-dark hover:bg-secondary-dark/50"
 				>
