@@ -30,6 +30,9 @@ export function connectWebSocket(sessionId: string, partId: string) {
 
 	websocket.onmessage = (event) => {
 		const data = JSON.parse(event.data);
+		console.log(`=== ALL WEBSOCKET MESSAGES ===`);
+		console.log('Message type:', data.type);
+		console.log('Full message:', data);
 		logEvent(`WS Received: ${data.type}`, data);
 
 		// Handle different message types from the backend
