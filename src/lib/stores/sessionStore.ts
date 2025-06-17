@@ -23,6 +23,7 @@ export interface Session {
 	config?: SessionConfig;
 	participants: Participant[];
 	iteration?: number;
+	currentPhase?: 'waiting' | 'walking' | 'revealing';
 }
 export interface LogEntry {
 	id: string;

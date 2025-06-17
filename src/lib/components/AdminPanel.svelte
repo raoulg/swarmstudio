@@ -111,12 +111,33 @@
 			alert(`Error deleting session: ${error.message}`);
 		}
 	}
+	async function handleStep() {
+	if (!$sessionState.id) {
+		alert('No active session');
+		return;
+	}
+
+	// Determine next action based on current phase
+	const nextAction = $sessionState.currentPhase === 'revealing' ? 'walk' : 'reveal';
+	
+	try {
+		if (nextAction === 'walk') {
+			// Trigger walk (swarm step)
+			await handleAction('step');
+		} else {
+			// Trigger reveal
+			await handleReveal();
+		}
+	} catch (error) {
+		alert(`Error during ${nextAction}: ${error.message}`);
+	}
+}
 
 	// New functions for Walk and Reveal
-	async function handleWalk() {
-		// This will trigger movement instructions to all participants
-		await handleAction('step');
-	}
+	// async function handleWalk() {
+	// 	// This will trigger movement instructions to all participants
+	// 	await handleAction('step');
+	// }
 
 	async function handleReveal() {
 		// This will trigger fitness revelation to all participants
@@ -139,7 +160,7 @@
 				console.log('Reveal endpoint not found, participants should handle this via WebSocket');
 			}
 		} catch (error) {
-			console.log('Triggering reveal state for participants');
+			console.log('Triggering reveal state for participants:', error);
 		}
 	}
 
@@ -151,7 +172,7 @@
 		
 		try {
 			// You'll need to implement this API endpoint
-			const response = await fetch(`/api/session/${$sessionState.id}/remove-participant`, {
+			const response = await fetch(`/api/admin/session/${$sessionState.id}/remove-participant`, {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -256,31 +277,49 @@
 			</div>
 		</div>
 
-		<!-- Walk and Reveal Controls -->
+		<!-- Single Step Control -->
 		<div class="flex flex-col gap-2 p-4 border border-green-500 rounded-lg">
 			<h3 class="font-bold text-lg text-green-400">3. Live Control</h3>
-			<p class="text-sm text-gray-400">Control participant experience in real-time</p>
 			
-			<div class="grid grid-cols-2 gap-4 mt-2">
-				<button 
-					on:click={handleWalk}
-					disabled={isLoading || !$sessionState.id || $sessionState.status !== 'active'}
-					class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg"
-				>
-					👟 Walk
+			<!-- Current State Indicator -->
+			<div class="flex items-center gap-3 mb-3">
+				<span class="text-sm text-gray-400">Current Phase:</span>
+				<div class="flex items-center gap-2">
+					{#if $sessionState.currentPhase === 'walking'}
+						<div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+						<span class="text-blue-400 font-semibold">👟 Walking</span>
+					{:else if $sessionState.currentPhase === 'revealing'}
+						<div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+						<span class="text-green-400 font-semibold">🎯 Revealing</span>
+					{:else}
+						<div class="w-3 h-3 bg-gray-500 rounded-full"></div>
+						<span class="text-gray-400">⏳ Waiting</span>
+					{/if}
+				</div>
+			</div>
+			
+			<!-- Single Step Button -->
+			<button 
+				on:click={handleStep}
+				disabled={isLoading || !$sessionState.id || $sessionState.status !== 'active'}
+				class="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+			>
+				{#if $sessionState.currentPhase === 'revealing'}
+					👟 Next: Walk
 					<div class="text-xs opacity-75">Show movement instructions</div>
-				</button>
-				
-				<button 
-					on:click={handleReveal}
-					disabled={isLoading || !$sessionState.id || $sessionState.status !== 'active'}
-					class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg"
-				>
-					🎯 Reveal
+				{:else}
+					🎯 Next: Reveal  
 					<div class="text-xs opacity-75">Show fitness scores</div>
-				</button>
+				{/if}
+			</button>
+			
+			<!-- Session Info -->
+			<div class="text-xs text-gray-400 text-center mt-2">
+				Iteration: {$sessionState.iteration || 0} | 
+				Participants: {$sessionState.participants?.length || 0}
 			</div>
 		</div>
+
 	</div>
 
 	<!-- Participant Management -->

@@ -42,34 +42,24 @@
 			isLoading = false;
 		}
 	}
-
-	// Reactive logic to handle WebSocket-driven state transitions
 	$: {
-		if (me && $sessionState.participants) {
-			// When we receive swarm_update with position changes, trigger movement instruction
-			if (movementState === 'waiting' && me.position) {
-				// Extract movement parameters from the swarm update
-				const newPosition = me.position;
-				const speed = me.velocity_magnitude || 0;
-				
-				// Map speed to chaos level (0-4)
-				const chaosLevel = Math.min(4, Math.floor(speed / 2));
-				
-				// Trigger movement state
-				targetPosition = newPosition;
-				currentChaosLevel = chaosLevel;
-				movementState = 'moving';
-				
-				// Auto-advance to waiting after movement display
-				setTimeout(() => {
-					movementState = 'waiting';
-				}, 5000);
-			}
+		// Map session phase to local movement state
+		if ($sessionState.currentPhase === 'walking') {
+			movementState = 'moving'; // Template expects 'moving'
+		} else if ($sessionState.currentPhase === 'revealing') {
+			movementState = 'revealing';
+		} else {
+			movementState = 'waiting';
+		}
+		
+		// Set target position when moving
+		if (me && movementState === 'moving' && me.position) {
+			targetPosition = me.position;
+			const speed = me.velocity_magnitude || 0;
+			currentChaosLevel = Math.min(4, Math.floor(speed / 2));
 		}
 	}
 
-	// Remove orphaned functions - state transitions now handled reactively
-	// handleMovementInstruction and handleFitnessRevelation are no longer needed
 </script>
 
 <svelte:head>

@@ -46,10 +46,21 @@ export function connectWebSocket(sessionId: string, partId: string) {
 				sessionState.set(data.session);
 				break;
 			case 'swarm_update':
+				console.log('=== SWARM UPDATE to walking phase ===');
 				sessionState.update((s) => ({
 					...s,
 					iteration: data.iteration,
-					participants: data.participants
+					participants: data.participants,
+					currentPhase: 'walking' // Set phase when walk happens
+				}));
+				break;
+			case 'reveal_fitness':
+				console.log('=== revealing triggered ===');
+				// Trigger reveal state by updating a reveal flag in sessionState
+				sessionState.update((s) => ({
+					...s,
+					currentPhase: 'revealing', // Add this new field
+					lastUpdate: data.timestamp
 				}));
 				break;
 			case 'participant_joined':
