@@ -114,7 +114,7 @@
 				<!-- Target Coordinates -->
 				<div class="space-y-4">
 					<h1 class="text-2xl font-semibold text-gray-300">Move to Position:</h1>
-					<div class="text-8xl font-bold font-mono tracking-wider">
+					<div class="text-5xl font-bold font-mono tracking-wider">
 						[{targetPosition[0]}, {targetPosition[1]}]
 					</div>
 				</div>
