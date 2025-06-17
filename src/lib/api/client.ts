@@ -6,9 +6,8 @@ const WS_BASE_URL = 'ws://localhost:8000';
 
 let websocket: WebSocket | null = null;
 
-// --- WebSocket Management ---
-// Add to client.ts (or create a separate types file)
-interface SessionSummary {
+// --- Types ---
+export interface SessionSummary {
 	session_id: string;
 	session_code: string;
 	status: string;
@@ -16,6 +15,7 @@ interface SessionSummary {
 	created_at: string;
 }
 
+// --- WebSocket Management ---
 export function connectWebSocket(sessionId: string, partId: string) {
 	if (websocket) {
 		websocket.close();
@@ -101,8 +101,14 @@ export function connectWebSocket(sessionId: string, partId: string) {
 	};
 }
 
-// --- API Functions ---
+export function connectAdminWebSocket(sessionId: string) {
+	// Generate a unique ID for the admin's WebSocket connection
+	const adminId = `admin_${crypto.randomUUID()}`;
+	logEvent(`Admin connecting to WebSocket for session ${sessionId}`);
+	connectWebSocket(sessionId, adminId);
+}
 
+// --- Core API Functions ---
 export async function createSession(adminKey: string, landscape: string, iterations: number) {
 	const response = await fetch(`${API_BASE_URL}/admin/create-session`, {
 		method: 'POST',
@@ -154,31 +160,6 @@ export async function resetSession(adminKey: string, sessionId: string) {
 		headers: { 'X-Admin-Key': adminKey }
 	});
 	if (!response.ok) throw new Error('Failed to reset session');
-	return response.json();
-}
-
-
-export function connectAdminWebSocket(sessionId: string) {
-	// Generate a unique ID for the admin's WebSocket connection
-	const adminId = `admin_${crypto.randomUUID()}`;
-	logEvent(`Admin connecting to WebSocket for session ${sessionId}`);
-	connectWebSocket(sessionId, adminId);
-}
-
-export async function listSessions(adminKey: string) {
-	const response = await fetch(`${API_BASE_URL}/admin/sessions`, {
-		headers: { 'X-Admin-Key': adminKey }
-	});
-	if (!response.ok) throw new Error('Failed to list sessions');
-	return response.json();
-}
-
-export async function deleteSession(adminKey: string, sessionId: string) {
-	const response = await fetch(`${API_BASE_URL}/admin/session/${sessionId}`, {
-		method: 'DELETE',
-		headers: { 'X-Admin-Key': adminKey }
-	});
-	if (!response.ok) throw new Error('Failed to delete session');
 	return response.json();
 }
 

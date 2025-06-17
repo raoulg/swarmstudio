@@ -1,13 +1,52 @@
 <script lang="ts">
 	import AdminPanel from '$lib/components/AdminPanel.svelte';
-	import ParticipantList from '$lib/components/ParticipantList.svelte';
-	// Removed Grid import since grid is now on overview page
+	import ParticipantManagement from '$lib/components/ParticipantManagement.svelte';
 	import { eventLog, isAdminView, latestSession } from '$lib/stores/sessionStore';
 	import { onMount } from 'svelte';
+
+	let adminKey = '';
 
 	onMount(() => {
 		isAdminView.set(true);
 	});
+
+	async function copyOverviewUrl(sessionId: string, event?: Event) {
+		const url = `http://localhost:5173/overview/${sessionId}`;
+		
+		try {
+			if (navigator.clipboard && window.isSecureContext) {
+				// Modern approach - works in HTTPS and localhost
+				await navigator.clipboard.writeText(url);
+			} else {
+				// Fallback for older browsers or non-secure contexts
+				const textArea = document.createElement('textarea');
+				textArea.value = url;
+				textArea.style.position = 'fixed';
+				textArea.style.left = '-999999px';
+				textArea.style.top = '-999999px';
+				document.body.appendChild(textArea);
+				textArea.focus();
+				textArea.select();
+				document.execCommand('copy');
+				textArea.remove();
+			}
+			
+			// Visual feedback
+			const button = event?.target as HTMLButtonElement;
+			if (button) {
+				const originalText = button.textContent;
+				button.textContent = '✅ Copied!';
+				button.style.backgroundColor = '#16a34a'; // green
+				setTimeout(() => {
+					button.textContent = originalText;
+					button.style.backgroundColor = ''; // reset
+				}, 2000);
+			}
+		} catch (err) {
+			console.error('Failed to copy URL:', err);
+			alert('Failed to copy URL. Please copy manually.');
+		}
+	}
 </script>
 
 <svelte:head>
@@ -22,29 +61,42 @@
 			<div class="card bg-primary/20 border border-primary/50">
 				<h3 class="text-xl font-bold mb-2 text-primary">Active Session</h3>
 				<p class="text-sm">Share this code with participants to join:</p>
-				<div class="text-center bg-base-300 p-3 my-3 rounded-lg">
-					<strong class="text-4xl font-mono tracking-widest text-white">
+				<div class="text-center bg-base-300 p-2 my-2 rounded-lg">
+					<strong class="text-2xl font-mono tracking-widest text-white">
 						{$latestSession.code}
 					</strong>
 				</div>
 				<p class="text-xs text-base-content/60">Session ID: {$latestSession.id}</p>
 				<div class="mt-2 text-sm">
-					<p class="text-blue-400">📺 Show overview screen on beamer:</p>
-					<p class="font-mono text-xs bg-gray-800 p-2 rounded">
-						http://localhost:5173/overview/{$latestSession.id}
-					</p>
+					<p class="text-blue-400 mb-1">📺 Show overview screen on beamer:</p>
+					<div class="flex items-center gap-2">
+						<p class="font-mono text-xs bg-gray-800 p-2 rounded flex-grow">
+							http://localhost:5173/overview/{$latestSession.id}
+						</p>
+						<button 
+							class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded transition-colors"
+							on:click={(e) => copyOverviewUrl($latestSession.id, e)}
+							title="Copy overview URL"
+						>
+							📋 Copy
+						</button>
+					</div>
 				</div>
 			</div>
 		{/if}
 
-		<AdminPanel />
+		<AdminPanel bind:adminKey />
 	</div>
 
-	<!-- Right Column: Event Log and Quick Info -->
+	<!-- Right Column: Event Log, Participant Management, and Quick Info -->
 	<div class="lg:col-span-1 flex flex-col gap-6">
+		<!-- Participant Management -->
+		<ParticipantManagement {adminKey} />
+
+		<!-- Event Log -->
 		<div class="card flex-grow overflow-y-auto">
 			<h3 class="text-xl font-bold mb-2">Event Log</h3>
-			<div class="font-mono text-xs space-y-1 max-h-96 overflow-y-auto">
+			<div class="font-mono text-xs space-y-1 max-h-64 overflow-y-auto">
 				{#each $eventLog as log (log.id)}
 					<div>
 						<span class="text-gray-500">{log.timestamp}</span>

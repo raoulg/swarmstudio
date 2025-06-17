@@ -13,9 +13,6 @@
 		{@render children()}
 	</main>
 
-	<footer class="text-center p-4 text-sm text-text-color/50">
-		<p>SwarmCraft - An Interactive Swarm Intelligence Experience</p>
-	</footer>
 </div>
 
 <style>

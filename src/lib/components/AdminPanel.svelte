@@ -5,19 +5,22 @@
 		triggerStep, 
 		resetSession, 
 		connectAdminWebSocket,
-		listSessions,
-		deleteSession as apiDeleteSession,
 		reconnectToSession,
-		API_BASE_URL
+		type SessionSummary
 	} from '$lib/api/client';
+	import { 
+		listSessions,
+		handleDeleteSession,
+		handleStep
+	} from '$lib/api/adminActions';
 	import { sessionState, latestSession } from '$lib/stores/sessionStore';
 	import { onMount } from 'svelte';
 
-	let adminKey = '';
-	let landscapeType = 'quadratic';
-	let maxIterations = 20;
-	let isLoading = false;
-	let existingSessions = [];
+	export let adminKey = '';
+	export let landscapeType = 'quadratic';
+	export let maxIterations = 20;
+	export let isLoading = false;
+	export let existingSessions: SessionSummary[] = [];
 
 	onMount(async () => {
 		if (adminKey) {
@@ -34,7 +37,7 @@
 			const activeSession = existingSessions.find(s => s.status === 'active');
 			const latestSession = existingSessions
 				.filter(s => s.participant_count > 0)
-				.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+				.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
 			
 			const targetSession = activeSession || latestSession;
 			
@@ -95,101 +98,13 @@
 		isLoading = false;
 	}
 
-	async function handleDeleteSession(session) {
-		if (!confirm(`Delete session ${session.session_code}? This will disconnect all participants.`)) {
-			return;
-		}
-		
-		try {
-			await apiDeleteSession(adminKey, session.session_id);
-			await loadExistingSessions();
-			
-			if ($sessionState.id === session.session_id) {
-				sessionState.set({ participants: [] });
-				latestSession.set(null);
-			}
-		} catch (error) {
-			alert(`Error deleting session: ${error.message}`);
-		}
-	}
-	async function handleStep() {
-	if (!$sessionState.id) {
-		alert('No active session');
-		return;
-	}
-
-	// Determine next action based on current phase
-	const nextAction = $sessionState.currentPhase === 'revealing' ? 'walk' : 'reveal';
-	
-	try {
-		if (nextAction === 'walk') {
-			// Trigger walk (swarm step)
-			await handleAction('step');
-		} else {
-			// Trigger reveal
-			await handleReveal();
-		}
-	} catch (error) {
-		alert(`Error during ${nextAction}: ${error.message}`);
-	}
-}
-
-	// New functions for Walk and Reveal
-	// async function handleWalk() {
-	// 	// This will trigger movement instructions to all participants
-	// 	await handleAction('step');
-	// }
-
-	async function handleReveal() {
-		// This will trigger fitness revelation to all participants
-		// We need to broadcast a reveal message to all participants
-		if (!$sessionState.id) {
-			alert('No active session');
-			return;
-		}
-
-		try {
-			// For now, we'll broadcast a custom reveal message
-			// You might want to add a specific API endpoint for this
-			const response = await fetch(`${API_BASE_URL}/admin/session/${$sessionState.id}/reveal`, {
-				method: 'POST',
-				headers: { 'X-Admin-Key': adminKey }
-			});
-			
-			if (!response.ok) {
-				// If reveal endpoint doesn't exist, fall back to manual broadcast
-				console.log('Reveal endpoint not found, participants should handle this via WebSocket');
-			}
-		} catch (error) {
-			console.log('Triggering reveal state for participants:', error);
-		}
-	}
-
-	// Participant removal function
-	async function removeParticipant(participantId: string) {
-		if (!confirm('Remove this participant from the session?')) {
-			return;
-		}
-		
-		try {
-			// You'll need to implement this API endpoint
-			const response = await fetch(`${API_BASE_URL}/admin/session/${$sessionState.id}/remove-participant`, {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'X-Admin-Key': adminKey 
-				},
-				body: JSON.stringify({ participant_id: participantId })
-			});
-			
-			if (!response.ok) {
-				throw new Error('Failed to remove participant');
-			}
-			
-			console.log(`Participant ${participantId} removed`);
-		} catch (error) {
-			alert(`Error removing participant: ${error.message}`);
-		}
+	async function handleStepAction() {
+		await handleStep(
+			adminKey, 
+			$sessionState.id, 
+			$sessionState.currentPhase, 
+			() => handleAction('step')
+		);
 	}
 </script>
 
@@ -217,7 +132,7 @@
 								</button>
 								<button 
 									class="text-xs bg-red-600 px-2 py-1 rounded hover:bg-red-700"
-									on:click={() => handleDeleteSession(session)}
+									on:click={() => handleDeleteSession(adminKey, session, loadExistingSessions)}
 								>
 									Delete
 								</button>
@@ -301,7 +216,7 @@
 			
 			<!-- Single Step Button -->
 			<button 
-				on:click={handleStep}
+				on:click={handleStepAction}
 				disabled={isLoading || !$sessionState.id || $sessionState.status !== 'active'}
 				class="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
 			>
@@ -320,51 +235,5 @@
 				Participants: {$sessionState.participants?.length || 0}
 			</div>
 		</div>
-
-	</div>
-
-	<!-- Participant Management -->
-	<div class="card w-full flex flex-col gap-4">
-		<h2 class="text-2xl font-bold text-purple-400">Participant Management</h2>
-		
-		{#if $sessionState.participants && $sessionState.participants.length > 0}
-			<div class="space-y-2">
-				{#each $sessionState.participants as participant (participant.id)}
-					<div class="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-						<div class="flex items-center gap-3">
-							<!-- Color indicator -->
-							<div 
-								class="w-4 h-4 rounded-full border border-gray-400"
-								style="background-color: {participant.color || '#888'}"
-							></div>
-							
-							<!-- Participant info -->
-							<div>
-								<div class="font-semibold">{participant.name}</div>
-								<div class="text-sm text-gray-400">
-									Pos: [{participant.position ? participant.position.join(', ') : 'N/A'}] | 
-									Fitness: {participant.fitness?.toFixed(2) || 'N/A'}
-									{#if participant.velocity_magnitude}
-										| Speed: {participant.velocity_magnitude.toFixed(1)}
-									{/if}
-								</div>
-							</div>
-						</div>
-						
-						<!-- Remove button -->
-						<button 
-							on:click={() => removeParticipant(participant.id)}
-							class="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded"
-						>
-							Remove
-						</button>
-					</div>
-				{/each}
-			</div>
-		{:else}
-			<div class="text-gray-400 text-center py-4">
-				No participants in session
-			</div>
-		{/if}
 	</div>
 </div>
