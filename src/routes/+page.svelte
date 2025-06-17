@@ -43,26 +43,33 @@
 		}
 	}
 
-	// Handle movement instruction (triggered by WebSocket)
-	function handleMovementInstruction(newPosition, chaosLevel) {
-		targetPosition = newPosition;
-		currentChaosLevel = chaosLevel;
-		movementState = 'moving';
-		autoConfirmArrival(); // Auto-return to waiting
+	// Reactive logic to handle WebSocket-driven state transitions
+	$: {
+		if (me && $sessionState.participants) {
+			// When we receive swarm_update with position changes, trigger movement instruction
+			if (movementState === 'waiting' && me.position) {
+				// Extract movement parameters from the swarm update
+				const newPosition = me.position;
+				const speed = me.velocity_magnitude || 0;
+				
+				// Map speed to chaos level (0-4)
+				const chaosLevel = Math.min(4, Math.floor(speed / 2));
+				
+				// Trigger movement state
+				targetPosition = newPosition;
+				currentChaosLevel = chaosLevel;
+				movementState = 'moving';
+				
+				// Auto-advance to waiting after movement display
+				setTimeout(() => {
+					movementState = 'waiting';
+				}, 5000);
+			}
+		}
 	}
 
-	// Auto-confirm arrival after movement instruction
-	function autoConfirmArrival() {
-		setTimeout(() => {
-			movementState = 'waiting';
-		}, 5000); // Auto-return after 5 seconds
-	}
-
-	// Handle fitness revelation (triggered by admin reveal)
-	function handleFitnessRevelation() {
-		movementState = 'revealing';
-		// Keep revelation screen until manually changed
-	}
+	// Remove orphaned functions - state transitions now handled reactively
+	// handleMovementInstruction and handleFitnessRevelation are no longer needed
 </script>
 
 <svelte:head>
@@ -236,27 +243,5 @@
 		</div>
 	{/if}
 
-	<!-- Test buttons for development -->
-	{#if $participantId && config}
-		<div class="fixed bottom-4 right-4 space-x-2 opacity-75">
-			<button 
-				on:click={() => handleMovementInstruction([5, 7], 2)} 
-				class="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-			>
-				Test Move
-			</button>
-			<button 
-				on:click={handleFitnessRevelation} 
-				class="bg-green-600 text-white px-3 py-1 rounded text-sm"
-			>
-				Test Reveal
-			</button>
-			<button 
-				on:click={() => movementState = 'waiting'} 
-				class="bg-gray-600 text-white px-3 py-1 rounded text-sm"
-			>
-				Back to Waiting
-			</button>
-		</div>
-	{/if}
+	<!-- No test buttons - controlled by admin only -->
 </main>
