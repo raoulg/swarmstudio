@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { sessionState } from '$lib/stores/sessionStore';
+	import { connectAdminWebSocket } from '$lib/api/client';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+
+	// Get session ID from URL params if provided
+	$: sessionId = $page.params.sessionId;
 
 	// Get session state
 	$: session = $sessionState;
@@ -14,6 +19,12 @@
 		.sort((a, b) => (a.fitness || 999) - (b.fitness || 999));
 
 	onMount(() => {
+		// If sessionId is provided in URL, connect to that session
+		if (sessionId) {
+			console.log('Overview connecting to session:', sessionId);
+			connectAdminWebSocket(sessionId);
+		}
+
 		// Auto-refresh every few seconds to stay current
 		const interval = setInterval(() => {
 			// Could trigger data refresh here if needed
@@ -89,7 +100,7 @@
 		
 		{#if sortedParticipants.length > 0}
 			<div class="flex-1 overflow-y-auto space-y-2">
-				{#each sortedParticipants as participant, index}
+				{#each sortedParticipants as participant, index (participant.id)}
 					<div class="bg-gray-800 rounded-lg p-3 border-l-4" style="border-left-color: {participant.color || '#888'};">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-3">
