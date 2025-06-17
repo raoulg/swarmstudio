@@ -61,12 +61,12 @@ The PSO algorithm has been refined with a new test landscape (`Quadratic`), expl
 ### 🚧 **Phase 5: Mobile Frontend Development (Svelte)** (IN PROGRESS)
 
 With a stable and tested backend, the next major step is to build the mobile-first frontend experience for participants.
-- [ ] **Setup SvelteKit Project**: Initialize the frontend project with TypeScript and TailwindCSS.
-- [ ] **Session Joining Flow**: Create UI for joining a session via a code.
-- [ ] **Grid Interface**: Develop the primary 25x25 grid with touch interaction.
-- [ ] **WebSocket Integration**: Connect the frontend to the backend for live updates.
-- [ ] **Real-time Visuals**: Implement real-time updates for particle positions and card colors based on WebSocket messages.
-- [ ] **Participant View**: Create the individual participant view that will be the core of the mobile experience.
+- [x] **Setup SvelteKit Project**: Initialize the frontend project with TypeScript and TailwindCSS.
+- [x] **Session Joining Flow**: Create UI for joining a session via a code.
+- [x] **Grid Interface**: Develop the primary 25x25 grid 
+- [x] **WebSocket Integration**: Connect the frontend to the backend for live updates.
+- [x] **Real-time Visuals**: Implement real-time updates for particle positions and card colors based on WebSocket messages.
+- [x] **Participant View**: Create the individual participant view that will be the core of the mobile experience.
 - [ ] **Testing Strategy**:
     1. **Multiple Browser Windows**: Use incognito tabs to simulate different users joining the same session.
     2. **Single-Screen Test Harness (Recommended)**: Build a special Svelte page that can host multiple participant components at once. This makes it easy to visualize how broadcasted events affect all users simultaneously.
