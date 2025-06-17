@@ -1,7 +1,7 @@
 import { sessionState, latestSession, participantId, logEvent } from '$lib/stores/sessionStore';
 import { get } from 'svelte/store';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+export const API_BASE_URL = 'http://localhost:8000/api';
 const WS_BASE_URL = 'ws://localhost:8000';
 
 let websocket: WebSocket | null = null;

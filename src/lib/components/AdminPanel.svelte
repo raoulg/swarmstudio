@@ -7,7 +7,8 @@
 		connectAdminWebSocket,
 		listSessions,
 		deleteSession as apiDeleteSession,
-		reconnectToSession
+		reconnectToSession,
+		API_BASE_URL
 	} from '$lib/api/client';
 	import { sessionState, latestSession } from '$lib/stores/sessionStore';
 	import { onMount } from 'svelte';
@@ -150,7 +151,7 @@
 		try {
 			// For now, we'll broadcast a custom reveal message
 			// You might want to add a specific API endpoint for this
-			const response = await fetch(`http://localhost:8000/api/admin/session/${$sessionState.id}/reveal`, {
+			const response = await fetch(`${API_BASE_URL}/admin/session/${$sessionState.id}/reveal`, {
 				method: 'POST',
 				headers: { 'X-Admin-Key': adminKey }
 			});
@@ -172,7 +173,7 @@
 		
 		try {
 			// You'll need to implement this API endpoint
-			const response = await fetch(`/api/admin/session/${$sessionState.id}/remove-participant`, {
+			const response = await fetch(`${API_BASE_URL}/admin/session/${$sessionState.id}/remove-participant`, {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
