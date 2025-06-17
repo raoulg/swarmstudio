@@ -1,5 +1,5 @@
 <script lang="ts">
-	import logo from '$lib/images/svelte-logo.svg'; // Assuming you have a logo, or we can just use text
+	import logo from '$lib/images/icon-48x48.png'; // Assuming you have a logo, or we can just use text
 </script>
 
 <header class="bg-primary-dark p-4 shadow-lg flex items-center justify-center">

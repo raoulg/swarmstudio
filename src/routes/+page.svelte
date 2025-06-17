@@ -71,6 +71,13 @@
 	{#if !$participantId}
 		<!-- Join Session Interface -->
 		<div class="w-full max-w-md text-center">
+			<div class="mb-8">
+				<img 
+					src="/src/lib/images/icon-192x192.png" 
+					alt="SwarmCraft Logo" 
+					class="w-48 h-48 mx-auto mb-4 rounded-lg shadow-lg"
+				/>
+			</div>
 			<h1 class="text-4xl font-bold text-accent-color mb-6">Join a Swarm</h1>
 			<div class="flex items-stretch gap-2">
 				<input
