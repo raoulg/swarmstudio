@@ -1,4 +1,5 @@
 <script lang="ts">
+	// src/routes/+page.svelte
 	import { sessionState, participantId } from '$lib/stores/sessionStore';
 	import { joinSession } from '$lib/api/client';
 
@@ -217,9 +218,8 @@
 			<header class="text-center">
 				<h1 class="text-3xl font-bold">Session: <span class="text-accent-color">{session.code}</span></h1>
 			</header>
-
 			{#if me}
-				<div class="card bg-secondary-dark p-6 rounded-lg w-full max-w-lg">
+				<div class="card bg-secondary-dark p-6 rounded-lg w-full max-w-lg" style="border: 2px solid {me.color || 'var(--color-bg-2)'};">
 					<h2 class="font-bold text-2xl mb-4 text-center">{me.name}</h2>
 					<div class="space-y-4 text-lg">
 						<div class="flex justify-between items-center">
@@ -228,11 +228,12 @@
 						</div>
 						<div class="flex justify-between items-center">
 							<span>Fitness Score:</span>
-							<span class="font-mono text-xl font-bold">{me.fitness ? me.fitness.toFixed(2) : 'N/A'}</span>
+							<span class="font-mono text-xl font-bold">???</span>
 						</div>
 					</div>
 				</div>
 			{/if}
+
 
 			<div class="text-center text-gray-400">
 				<p class="text-lg">Waiting for next instruction...</p>

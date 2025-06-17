@@ -1,4 +1,5 @@
 <script lang="ts">
+	// src/lib/components/AdminPanel.svelte
 	import { 
 		createSession, 
 		startSession, 

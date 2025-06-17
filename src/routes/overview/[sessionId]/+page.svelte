@@ -1,4 +1,5 @@
 <script lang="ts">
+	// src/routes/overview/[sessionId]/+page.svelte
 	import { sessionState } from '$lib/stores/sessionStore';
 	import { connectAdminWebSocket } from '$lib/api/client';
 	import { onMount } from 'svelte';
