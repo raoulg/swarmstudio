@@ -105,14 +105,20 @@
 					<div class="bg-gray-800 rounded-lg p-3 border-l-4" style="border-left-color: {participant.color || '#888'};">
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-3">
-								<!-- Rank -->
-								<div class="text-2xl font-bold text-yellow-400 w-8">
-									{#if index === 0}🥇
-									{:else if index === 1}🥈
-									{:else if index === 2}🥉
-									{:else}{index + 1}
-									{/if}
-								</div>
+								<!-- Rank (only show during revealing phase) -->
+								{#if session.currentPhase === 'revealing'}
+									<div class="text-2xl font-bold text-yellow-400 w-8">
+										{#if index === 0}🥇
+										{:else if index === 1}🥈
+										{:else if index === 2}🥉
+										{:else}{index + 1}
+										{/if}
+									</div>
+								{:else}
+									<div class="text-2xl font-bold text-gray-500 w-8">
+										•
+									</div>
+								{/if}
 								
 								<!-- Participant Info -->
 								<div>
@@ -123,11 +129,18 @@
 								</div>
 							</div>
 							
-							<!-- Fitness Score -->
+							<!-- Fitness Score - only show during revealing phase -->
 							<div class="text-right">
-								<div class="text-xl font-bold text-white">
-									{participant.fitness?.toFixed(2) || 'N/A'}
-								</div>
+								{#if session.currentPhase === 'revealing'}
+									<div class="text-xl font-bold text-white">
+										{participant.fitness?.toFixed(2) || 'N/A'}
+									</div>
+								{:else}
+									<div class="text-xl font-bold text-gray-500">
+										???
+									</div>
+								{/if}
+								
 								{#if participant.velocity_magnitude}
 									<div class="text-sm text-gray-400">
 										Speed: {participant.velocity_magnitude.toFixed(1)}
@@ -147,29 +160,44 @@
 			</div>
 		{/if}
 
-		<!-- Session Stats -->
+		<!-- Session Stats - also hide fitness during walking phase -->
 		{#if participants.length > 0}
 			<div class="mt-6 bg-gray-800 rounded-lg p-4">
 				<h3 class="font-bold mb-2 text-blue-400">Session Stats</h3>
 				<div class="space-y-1 text-sm">
-					<div class="flex justify-between">
-						<span>Best Score:</span>
-						<span class="font-mono">{sortedParticipants[0]?.fitness?.toFixed(2) || 'N/A'}</span>
-					</div>
-					<div class="flex justify-between">
-						<span>Worst Score:</span>
-						<span class="font-mono">{sortedParticipants[sortedParticipants.length - 1]?.fitness?.toFixed(2) || 'N/A'}</span>
-					</div>
-					<div class="flex justify-between">
-						<span>Average:</span>
-						<span class="font-mono">
-							{sortedParticipants.length > 0 
-								? (sortedParticipants.reduce((sum, p) => sum + (p.fitness || 0), 0) / sortedParticipants.length).toFixed(2)
-								: 'N/A'}
-						</span>
-					</div>
+					{#if session.currentPhase === 'revealing'}
+						<div class="flex justify-between">
+							<span>Best Score:</span>
+							<span class="font-mono">{sortedParticipants[0]?.fitness?.toFixed(2) || 'N/A'}</span>
+						</div>
+						<div class="flex justify-between">
+							<span>Worst Score:</span>
+							<span class="font-mono">{sortedParticipants[sortedParticipants.length - 1]?.fitness?.toFixed(2) || 'N/A'}</span>
+						</div>
+						<div class="flex justify-between">
+							<span>Average:</span>
+							<span class="font-mono">
+								{sortedParticipants.length > 0 
+									? (sortedParticipants.reduce((sum, p) => sum + (p.fitness || 0), 0) / sortedParticipants.length).toFixed(2)
+									: 'N/A'}
+							</span>
+						</div>
+					{:else}
+						<div class="flex justify-between">
+							<span>Phase:</span>
+							<span class="font-mono capitalize">{session.currentPhase || 'waiting'}</span>
+						</div>
+						<div class="flex justify-between">
+							<span>Iteration:</span>
+							<span class="font-mono">{session.iteration || 0}</span>
+						</div>
+						<div class="text-center text-gray-400 mt-2">
+							<span class="text-xs">Fitness scores hidden during movement</span>
+						</div>
+					{/if}
 				</div>
 			</div>
 		{/if}
 	</div>
+
 </main>
