@@ -37,14 +37,26 @@ export function connectWebSocket(sessionId: string, partId: string) {
 
 		// Handle different message types from the backend
 		switch (data.type) {
-			case 'session_state':
-			case 'session_started':
 			case 'session_reset':
-				console.log('=== WEBSOCKET SESSION DATA ===');
-				console.log('Received data.session:', data.session);
-				console.log('Current sessionState before update:', sessionState);
+				// ONLY reset should do complete replacement
+				console.log('=== COMPLETE RESET ===');
 				sessionState.set(data.session);
 				break;
+
+			case 'session_state':
+			case 'session_started':
+				// Smart merge - preserve currentPhase and other client state
+				console.log('=== SMART SESSION UPDATE ===');
+				console.log('Received data.session:', data.session);
+				console.log('Current sessionState before update:', get(sessionState));
+
+				sessionState.update((currentState) => ({
+					...data.session,
+					// Preserve client-side phase state unless server explicitly sets it
+					currentPhase: data.session.currentPhase || currentState.currentPhase
+				}));
+				break;
+
 			case 'swarm_update':
 				console.log('=== SWARM UPDATE to walking phase ===');
 				sessionState.update((s) => ({
@@ -54,25 +66,30 @@ export function connectWebSocket(sessionId: string, partId: string) {
 					currentPhase: 'walking' // Set phase when walk happens
 				}));
 				break;
+
 			case 'reveal_fitness':
 				console.log('=== revealing triggered ===');
-				// Trigger reveal state by updating a reveal flag in sessionState
 				sessionState.update((s) => ({
 					...s,
-					currentPhase: 'revealing', // Add this new field
+					currentPhase: 'revealing',
 					lastUpdate: data.timestamp
 				}));
 				break;
+
 			case 'participant_joined':
 				console.log('=== PARTICIPANT_JOINED DEBUG ===');
 				console.log('Raw message data:', data);
 				console.log('data.participants:', data.participants);
 				console.log('Current sessionState before update:', get(sessionState));
-				sessionState.update((s) => ({
-					...s,
-					participants: data.participants
-				}));
+
+				// This is already correct - smart update only
+				// sessionState.update((s) => ({
+				// 	...s,
+				// 	participants: data.participants
+				// }));
+				console.log(`Participant ${data.participant_id} joined - waiting for updated participants list`);
 				break;
+
 			case 'participant_moved':
 				sessionState.update((s) => ({
 					...s,
@@ -83,6 +100,7 @@ export function connectWebSocket(sessionId: string, partId: string) {
 					)
 				}));
 				break;
+
 			case 'session_closed':
 				alert('The session has been closed by the admin.');
 				websocket?.close();
@@ -90,6 +108,7 @@ export function connectWebSocket(sessionId: string, partId: string) {
 				break;
 		}
 	};
+
 
 	websocket.onclose = () => {
 		logEvent('WebSocket disconnected');
