@@ -98,6 +98,18 @@
 	<!-- Leaderboard (1/3 width) -->
 	<div class="col-span-1 flex flex-col">
 		<h2 class="text-2xl font-bold mb-4 text-green-400">Leaderboard</h2>
+		<!-- QR Code Section -->
+		{#if session.code}
+			<div class="mb-6 text-center">
+				<img 
+					src="/static/qr.png" 
+					alt="Join Session QR Code" 
+					class="mx-auto mb-2 rounded-lg shadow-lg border-2 border-gray-600"
+					style="width: 180px; height: 180px;"
+				/>
+				<p class="text-sm text-gray-400">Scan to join session</p>
+			</div>
+		{/if}
 		
 		{#if sortedParticipants.length > 0}
 			<div class="flex-1 overflow-y-auto space-y-2">
