@@ -1,8 +1,8 @@
 import { sessionState, latestSession, participantId, logEvent } from '$lib/stores/sessionStore';
 import { get } from 'svelte/store';
 
-export const API_BASE_URL = 'http://localhost:8000/api';
-const WS_BASE_URL = 'ws://localhost:8000';
+export const API_BASE_URL = 'http://145.38.195.118:8000/api';
+const WS_BASE_URL = 'ws://145.38.195.118:8000';
 
 let websocket: WebSocket | null = null;
 
@@ -13,6 +13,14 @@ export interface SessionSummary {
 	status: string;
 	participant_count: number;
 	created_at: string;
+}
+
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 // --- WebSocket Management ---
@@ -122,7 +130,7 @@ export function connectWebSocket(sessionId: string, partId: string) {
 
 export function connectAdminWebSocket(sessionId: string) {
 	// Generate a unique ID for the admin's WebSocket connection
-	const adminId = `admin_${crypto.randomUUID()}`;
+	const adminId = `admin_${generateUUID()}`;
 	logEvent(`Admin connecting to WebSocket for session ${sessionId}`);
 	connectWebSocket(sessionId, adminId);
 }

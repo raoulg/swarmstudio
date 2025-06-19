@@ -38,10 +38,18 @@ export const participantId = writable<string | null>(null);
 export const eventLog = writable<LogEntry[]>([]);
 export const isAdminView = writable<boolean>(false);
 
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Helper to add logs
 export function logEvent(message: string, data?: unknown) {
 	const newLog: LogEntry = {
-		id: crypto.randomUUID(),
+		id: generateUUID(),
 		timestamp: new Date().toLocaleTimeString(),
 		message,
 		data
