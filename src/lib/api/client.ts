@@ -134,7 +134,7 @@ export async function createSession(adminKey: string, landscape: string, iterati
 		headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
 		body: JSON.stringify({
 			landscape_type: landscape,
-			grid_size: 25,
+			grid_size: 10,
 			max_participants: 50,
 			max_iterations: iterations,
 			min_exploration_probability: 0.01,
