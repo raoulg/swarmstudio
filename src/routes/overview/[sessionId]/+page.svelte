@@ -102,7 +102,7 @@
 		{#if session.code}
 			<div class="mb-6 text-center">
 				<img 
-					src="/static/qr.png" 
+					src="/qr.png" 
 					alt="Join Session QR Code" 
 					class="mx-auto mb-2 rounded-lg shadow-lg border-2 border-gray-600"
 					style="width: 180px; height: 180px;"
