@@ -11,7 +11,7 @@
 	});
 
 	async function copyOverviewUrl(sessionId: string, event?: Event) {
-		const url = `http://localhost:5173/overview/${sessionId}`;
+		const url = `http://145.38.195.118:8080/overview/${sessionId}`;
 		
 		try {
 			if (navigator.clipboard && window.isSecureContext) {
