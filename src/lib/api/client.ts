@@ -84,6 +84,14 @@ export function connectWebSocket(sessionId: string, partId: string) {
 				}));
 				break;
 
+			case 'position_feedback':
+				console.log('=== position feedback received ===');
+				sessionState.update((s) => ({
+					...s,
+					participants: s.participants.map((p) => ((p.id === data.participant_id)? { ...p, fitness: data.fitness, color: data.color } : p))
+				}));
+				break;
+
 			case 'participant_joined':
 				console.log('=== PARTICIPANT_JOINED DEBUG ===');
 				console.log('Raw message data:', data);
