@@ -54,12 +54,13 @@
 			<div class="flex-1 flex items-center justify-center">
 				<div
 					class="grid border-4 border-blue-500 bg-gray-800 rounded-lg overflow-hidden shadow-2xl"
-					style="grid-template-columns: repeat({gridSize}, 1fr); width: 90%; max-width: 700px; aspect-ratio: 1 / 1;"
+					style="grid-template-columns: repeat({gridSize/10}, 1fr); width: 90%; max-width: 700px; aspect-ratio: 1 / 1;
+					grid-template-rows: repeat({gridSize/10}, 1fr); height: 90%; max-height: 700px;"
 				>
-					{#each Array(gridSize * gridSize) as _, i}
+					{#each Array(gridSize/10 * gridSize/10) as _, i}
 						{@const row = Math.floor(i / gridSize)}
 						{@const col = i % gridSize}
-						{@const participant = participants.find(p => p.position && p.position[0] === row && p.position[1] === col)}
+						{@const participant = participants.find(p => p.position && Math.floor(p.position[0]/10) === row && Math.floor(p.position[1]/10) === col)}
 						
 						<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
 							{#if participant}

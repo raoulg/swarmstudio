@@ -1,8 +1,8 @@
 import { sessionState, latestSession, participantId, logEvent } from '$lib/stores/sessionStore';
 import { get } from 'svelte/store';
 
-export const API_BASE_URL = 'http://145.38.195.118:8000/api';
-const WS_BASE_URL = 'ws://145.38.195.118:8000';
+export const API_BASE_URL = 'http://localhost:8000/api';
+const WS_BASE_URL = 'ws://localhost:8000';
 
 let websocket: WebSocket | null = null;
 
@@ -135,6 +135,18 @@ export function connectAdminWebSocket(sessionId: string) {
 	connectWebSocket(sessionId, adminId);
 }
 
+export function sendPosition(position: [number, number]): void {
+	if (websocket && websocket.readyState === WebSocket.OPEN) {
+		websocket.send(JSON.stringify({
+			type: 'move',
+			position: position
+		}));
+		logEvent(`Sent position: [${position[0]}, ${position[1]}]`);
+	} else {
+		logEvent('Cannot send position: WebSocket not connected');
+	}
+}
+
 // --- Core API Functions ---
 export async function createSession(adminKey: string, landscape: string, iterations: number) {
 	const response = await fetch(`${API_BASE_URL}/admin/create-session`, {
@@ -142,7 +154,7 @@ export async function createSession(adminKey: string, landscape: string, iterati
 		headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
 		body: JSON.stringify({
 			landscape_type: landscape,
-			grid_size: 10,
+			grid_size: 100,
 			max_participants: 50,
 			max_iterations: iterations,
 			min_exploration_probability: 0.01,

@@ -1,30 +1,26 @@
 <script lang="ts">
 	// src/routes/+page.svelte
 	import { sessionState, participantId } from '$lib/stores/sessionStore';
-	import { joinSession } from '$lib/api/client';
+	import { joinSession, sendPosition } from '$lib/api/client';
 
 	let sessionCode = '';
 	let errorMessage = '';
 	let isLoading = false;
 	let movementState = 'waiting'; // 'waiting', 'moving', 'revealing'
-	let targetPosition = null;
-	let currentChaosLevel = 0; // 0-4 for 5 discrete levels
-	
+
+	// Coordinate input state
+	let inputX = '';
+	let inputY = '';
+	let hasSubmittedPosition = false;
+	let submissionError = '';
+	let isSubmitting = false;
+
 	// Reactive variables based on the session store
 	$: session = $sessionState;
 	$: participants = session.participants || [];
 	$: config = session.config;
-	$: gridSize = config?.grid_size || 25;
+	const COORD_MAX = 100; // Fixed 0-100 coordinate system
 	$: me = participants.find((p) => p.id === $participantId);
-
-	// Chaos level descriptions and visual styles
-	const chaosLevels = [
-		{ name: "Crystal Order", emoji: "💎", description: "Precise movement", bg: "bg-blue-500" },
-		{ name: "Structured", emoji: "🏗️", description: "Organized approach", bg: "bg-green-500" },
-		{ name: "Balanced", emoji: "⚖️", description: "Mixed strategy", bg: "bg-yellow-500" },
-		{ name: "Turbulent", emoji: "🌪️", description: "High exploration", bg: "bg-orange-500" },
-		{ name: "Primordial Chaos", emoji: "🌋", description: "Pure randomness", bg: "bg-red-500" }
-	];
 
 	// Function to handle joining a session
 	async function handleJoin() {
@@ -43,22 +39,57 @@
 			isLoading = false;
 		}
 	}
+
+	function handleSubmitPosition() {
+		submissionError = '';
+
+		// Validate inputs
+		const x = parseInt(inputX);
+		const y = parseInt(inputY);
+
+		if (isNaN(x) || isNaN(y)) {
+			submissionError = 'Please enter valid numbers';
+			return;
+		}
+
+		// Coordinate bounds validation (0-100)
+		if (x < 0 || x > COORD_MAX || y < 0 || y > COORD_MAX) {
+			submissionError = `Coordinates must be between 0 and ${COORD_MAX}`;
+			return;
+		}
+
+		isSubmitting = true;
+		try {
+			// Send as [row, col] format (Y, X) matching backend expectation
+			sendPosition([y, x]);
+			hasSubmittedPosition = true;
+		} catch (error) {
+			submissionError = 'Failed to submit position. Try again.';
+			console.error('Position submission error:', error);
+		} finally {
+			isSubmitting = false;
+		}
+	}
+	let previousPhase: string | undefined = undefined;
 	$: {
 		// Map session phase to local movement state
 		if ($sessionState.currentPhase === 'walking') {
-			movementState = 'moving'; // Template expects 'moving'
+			movementState = 'moving';
+
+			// Reset submission state when entering walk phase (new phase)
+			if (previousPhase !== 'walking') {
+				hasSubmittedPosition = false;
+				submissionError = '';
+				inputX = '';
+				inputY = '';
+			}
 		} else if ($sessionState.currentPhase === 'revealing') {
 			movementState = 'revealing';
 		} else {
 			movementState = 'waiting';
 		}
-		
-		// Set target position when moving
-		if (me && movementState === 'moving' && me.position) {
-			targetPosition = me.position;
-			const speed = me.velocity_magnitude || 0;
-			currentChaosLevel = Math.min(4, Math.floor(speed / 2));
-		}
+
+		previousPhase = $sessionState.currentPhase;
 	}
 
 </script>
@@ -102,8 +133,8 @@
 			{/if}
 		</div>
 
-	{:else if movementState === 'moving' && targetPosition}
-		<!-- Movement Instruction Screen -->
+	{:else if movementState === 'moving'}
+		<!-- Movement Input Screen -->
 		<div class="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-blue-900 text-white relative">
 			<!-- Name in top corner -->
 			<div class="absolute top-4 left-4 text-sm opacity-75">
@@ -111,39 +142,65 @@
 			</div>
 
 			<div class="text-center space-y-8">
-				<!-- Target Coordinates -->
-				<div class="space-y-4">
-					<h1 class="text-2xl font-semibold text-gray-300">Move to Position:</h1>
-					<div class="text-5xl font-bold font-mono tracking-wider">
-						[{targetPosition[0]}, {targetPosition[1]}]
-					</div>
-				</div>
+				{#if !hasSubmittedPosition}
+					<!-- Coordinate Input Form -->
+					<div class="space-y-6">
+						<h1 class="text-3xl font-semibold text-gray-200">Enter Your Position</h1>
+						<p class="text-gray-400">Choose coordinates from 0 to {COORD_MAX}</p>
 
-				<!-- Chaos Level Indicator -->
-				<div class="space-y-4">
-					<h2 class="text-xl text-gray-300">Your Movement Style:</h2>
-					<div class="flex flex-col items-center space-y-2">
-						<!-- Placeholder for future image -->
-						<div class="w-32 h-32 border-4 border-gray-400 rounded-lg flex items-center justify-center bg-gray-600">
-							<div class="text-5xl">{chaosLevels[currentChaosLevel].emoji}</div>
+						<div class="flex items-center justify-center gap-6">
+							<div class="flex flex-col items-center">
+								<label for="inputX" class="text-lg text-gray-400 mb-2">X</label>
+								<input
+									id="inputX"
+									type="number"
+									bind:value={inputX}
+									min="0"
+									max={COORD_MAX}
+									class="w-28 h-20 text-4xl font-mono text-center bg-gray-800 border-2 border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none text-white"
+									placeholder="0"
+								/>
+							</div>
+							<span class="text-5xl text-gray-500 mt-6">,</span>
+							<div class="flex flex-col items-center">
+								<label for="inputY" class="text-lg text-gray-400 mb-2">Y</label>
+								<input
+									id="inputY"
+									type="number"
+									bind:value={inputY}
+									min="0"
+									max={COORD_MAX}
+									class="w-28 h-20 text-4xl font-mono text-center bg-gray-800 border-2 border-gray-600 rounded-lg focus:border-blue-500 focus:outline-none text-white"
+									placeholder="0"
+								/>
+							</div>
 						</div>
-						<div class="text-2xl font-semibold">{chaosLevels[currentChaosLevel].name}</div>
-						<div class="w-64 h-3 bg-gray-700 rounded-full overflow-hidden">
-							<div 
-								class="h-full transition-all duration-500 {chaosLevels[currentChaosLevel].bg}"
-								style="width: {((currentChaosLevel + 1) / 5) * 100}%"
-							></div>
-						</div>
-					</div>
-				</div>
 
-				<!-- Movement Speed Display -->
-				{#if me?.velocity_magnitude}
-					<div class="space-y-2">
-						<h2 class="text-lg text-gray-300">Movement Speed</h2>
-						<div class="text-3xl font-bold">
-							{me.velocity_magnitude.toFixed(2)}
+						{#if submissionError}
+							<p class="text-red-400 text-sm">{submissionError}</p>
+						{/if}
+
+						<button
+							on:click={handleSubmitPosition}
+							disabled={isSubmitting}
+							class="mt-4 px-10 py-5 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg text-2xl font-bold transition-colors"
+						>
+							{#if isSubmitting}
+								Submitting...
+							{:else}
+								Submit Position
+							{/if}
+						</button>
+					</div>
+				{:else}
+					<!-- Confirmation after submission -->
+					<div class="space-y-6">
+						<div class="text-8xl mb-4">✅</div>
+						<h1 class="text-3xl font-semibold text-green-400">Position Submitted!</h1>
+						<div class="text-5xl font-bold font-mono tracking-wider">
+							[{inputX}, {inputY}]
 						</div>
+						<p class="text-xl text-gray-400">Waiting for reveal phase...</p>
 					</div>
 				{/if}
 
@@ -153,9 +210,9 @@
 
 	{:else if movementState === 'revealing'}
 		<!-- Fitness Revelation Screen -->
-		<div 
+		<div
 			class="w-full h-screen flex flex-col items-center justify-center text-white relative"
-			style="background: linear-gradient(135deg, {me?.color || '#888'}, {me?.color || '#888'}88);"
+			style="background: linear-gradient(135deg, {(me?.color || '#888')}, {(me?.color || '#888')}88);"
 		>
 			<!-- Name in top corner -->
 			<div class="absolute top-4 left-4 text-sm opacity-75">
