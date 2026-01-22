@@ -57,6 +57,10 @@
 			submissionError = `Coordinates must be between 0 and ${COORD_MAX}`;
 			return;
 		}
+		if (me) {
+			var me_ix = participants.indexOf(me);
+			$sessionState.participants[me_ix].position = [x, y];
+		}
 
 		isSubmitting = true;
 		try {
