@@ -58,8 +58,8 @@
 					grid-template-rows: repeat({gridSize/10}, 1fr); height: 90%; max-height: 700px;"
 				>
 					{#each Array(gridSize/10 * gridSize/10) as _, i}
-						{@const row = Math.floor(i / gridSize)}
-						{@const col = i % gridSize}
+						{@const row = Math.floor(i / (gridSize/10))}
+						{@const col = i % (gridSize/10)}
 						{@const participant = participants.find(p => p.position && Math.floor(p.position[0]/10) === row && Math.floor(p.position[1]/10) === col)}
 						
 						<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">

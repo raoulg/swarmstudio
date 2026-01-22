@@ -60,8 +60,7 @@
 
 		isSubmitting = true;
 		try {
-			// Send as [row, col] format (Y, X) matching backend expectation
-			sendPosition([y, x]);
+			sendPosition([x, y]);
 			hasSubmittedPosition = true;
 		} catch (error) {
 			submissionError = 'Failed to submit position. Try again.';
@@ -137,7 +136,7 @@
 		<!-- Movement Input Screen -->
 		<div class="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-blue-900 text-white relative">
 			<!-- Name in top corner -->
-			<div class="absolute top-4 left-4 text-sm opacity-75">
+			<div class="relative top-4 left-4 text-sm opacity-75">
 				{me?.name}
 			</div>
 
@@ -215,7 +214,7 @@
 			style="background: linear-gradient(135deg, {(me?.color || '#888')}, {(me?.color || '#888')}88);"
 		>
 			<!-- Name in top corner -->
-			<div class="absolute top-4 left-4 text-sm opacity-75">
+			<div class="relative top-4 left-4 text-sm opacity-75">
 				{me?.name}
 			</div>
 
