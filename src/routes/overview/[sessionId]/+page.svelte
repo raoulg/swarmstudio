@@ -69,10 +69,14 @@
 						<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
 							{#if participant}
 								<div
-									class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg"
+									class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
 									style="background-color: {participant.color || '#888'};"
 									title="{participant.name} - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
-								></div>
+								>
+									<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">
+										{participant.emojis ? participant.emojis.join('') : ''}
+									</span>
+								</div>
 								<!-- Add participant name overlay for close-up viewing -->
 								<div class="absolute bottom-0 left-0 right-0 text-xs text-center text-white/60 truncate px-1">
 									{participant.name}
@@ -139,7 +143,10 @@
 								
 								<!-- Participant Info -->
 								<div>
-									<div class="font-semibold text-lg">{participant.name}</div>
+									<div class="font-semibold text-lg flex items-center gap-2">
+										<span>{participant.name}</span>
+										<span class="text-xl">{participant.emojis ? participant.emojis.join('') : ''}</span>
+									</div>
 									<div class="text-sm text-gray-400">
 										Position: [{participant.position ? participant.position.join(', ') : 'waiting'}]
 									</div>
