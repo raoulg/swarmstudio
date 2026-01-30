@@ -4,6 +4,7 @@
 	import { connectAdminWebSocket } from '$lib/api/client';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import TraceOverlay from '$lib/components/TraceOverlay.svelte';
 
 	// Get session ID from URL params if provided
 	$: sessionId = $page.params.sessionId;
@@ -58,30 +59,39 @@
 		{#if config}
 			<div class="flex-1 flex items-center justify-center">
 				<div class="flex items-center gap-6">
-					<!-- The Grid -->
+					<!-- The Grid with Trace Overlay -->
 					<div
-						class="grid border-4 border-blue-500 bg-gray-800 rounded-lg overflow-hidden shadow-2xl"
-						style="grid-template-columns: repeat({gridSize}, 1fr); width: 60vh; max-width: 700px; aspect-ratio: 1 / 1;"
+						class="relative border-4 border-blue-500 bg-gray-800 rounded-lg overflow-hidden shadow-2xl"
+						style="width: 60vh; max-width: 700px; aspect-ratio: 1 / 1;"
 					>
-						{#each Array(gridSize * gridSize) as _, i}
-							{@const row = Math.floor(i / gridSize)}
-							{@const col = i % gridSize}
-							{@const participant = participants.find(p => p.position && p.position[0] === row && p.position[1] === col)}
-							
-							<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
-								{#if participant}
-									<div
-										class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
-										style="background-color: {participant.color || '#888'};"
-										title="{participant.name} - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
-									>
-										<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">
-											{participant.emojis ? participant.emojis.join('') : ''}
-										</span>
-									</div>
-								{/if}
-							</div>
-						{/each}
+						<!-- Grid cells -->
+						<div
+							class="grid absolute inset-0"
+							style="grid-template-columns: repeat({gridSize}, 1fr);"
+						>
+							{#each Array(gridSize * gridSize) as _, i}
+								{@const row = Math.floor(i / gridSize)}
+								{@const col = i % gridSize}
+								{@const participant = participants.find(p => p.position && p.position[0] === row && p.position[1] === col)}
+
+								<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
+									{#if participant}
+										<div
+											class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
+											style="background-color: {participant.color || '#888'}; z-index: 10;"
+											title="{participant.name} - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
+										>
+											<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">
+												{participant.emojis ? participant.emojis.join('') : ''}
+											</span>
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+
+						<!-- Trace Overlay -->
+						<TraceOverlay {gridSize} {participants} />
 					</div>
 
 					<!-- Vertical Fitness Legend -->
@@ -125,16 +135,16 @@
 		<!-- QR Code Section -->
 		{#if session.code}
 			<div class="mb-4 text-center">
-				<img 
-					src="/qr.png" 
-					alt="Join Session QR Code" 
+				<img
+					src="/qr.png"
+					alt="Join Session QR Code"
 					class="mx-auto mb-1 rounded-lg shadow-lg border-2 border-gray-600"
 					style="width: 120px; height: 120px;"
 				/>
 				<p class="text-xs text-gray-400">Scan to join session</p>
 			</div>
 		{/if}
-		
+
 		{#if sortedParticipants.length > 0}
 			<!-- Column Headers -->
 			<div class="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center">
@@ -152,7 +162,7 @@
 							<div class="w-12 text-lg flex-shrink-0 text-center whitespace-nowrap overflow-visible">
 								{participant.emojis ? participant.emojis.join('') : ''}
 							</div>
-							
+
 							<!-- Name -->
 							<div class="flex-grow min-w-0 font-medium pl-2 truncate text-gray-200">
 								{participant.name}
@@ -205,7 +215,7 @@
 						<div class="flex justify-between">
 							<span>Average:</span>
 							<span class="font-mono">
-								{sortedParticipants.length > 0 
+								{sortedParticipants.length > 0
 									? (sortedParticipants.reduce((sum, p) => sum + (p.fitness || 0), 0) / sortedParticipants.length).toFixed(2)
 									: 'N/A'}
 							</span>

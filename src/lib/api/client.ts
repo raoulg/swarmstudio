@@ -1,4 +1,11 @@
-import { sessionState, latestSession, participantId, logEvent } from '$lib/stores/sessionStore';
+import {
+	sessionState,
+	latestSession,
+	participantId,
+	logEvent,
+	addPositionToHistory,
+	clearPositionHistory
+} from '$lib/stores/sessionStore';
 import { get } from 'svelte/store';
 import {
 	saveParticipantSession,
@@ -66,6 +73,8 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 				sessionState.set(data.session);
 				// Clear localStorage on session reset
 				clearParticipantSession();
+				// Clear position history
+				clearPositionHistory();
 				break;
 
 			case 'session_state':
@@ -84,6 +93,22 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 
 			case 'swarm_update':
 				console.log('=== SWARM UPDATE to walking phase ===');
+				console.log('Number of participants in update:', data.participants?.length);
+
+				// Track position changes for all participants
+				if (data.participants) {
+					data.participants.forEach((participant: any) => {
+						if (participant.position) {
+							console.log(`Adding position for ${participant.id}: [${participant.position}]`);
+							addPositionToHistory(participant.id, participant.position, data.iteration);
+						} else {
+							console.log(`Participant ${participant.id} has no position`);
+						}
+					});
+				} else {
+					console.log('No participants in swarm_update message');
+				}
+
 				sessionState.update((s) => ({
 					...s,
 					iteration: data.iteration,
@@ -128,6 +153,11 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 				break;
 
 			case 'participant_moved':
+				// Track position change
+				if (data.position) {
+					addPositionToHistory(data.participant_id, data.position);
+				}
+
 				sessionState.update((s) => ({
 					...s,
 					participants: s.participants.map((p) =>

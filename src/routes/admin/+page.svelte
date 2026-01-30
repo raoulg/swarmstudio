@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AdminPanel from '$lib/components/AdminPanel.svelte';
 	import ParticipantManagement from '$lib/components/ParticipantManagement.svelte';
+	import TracingControls from '$lib/components/TracingControls.svelte';
 	import { eventLog, isAdminView, latestSession } from '$lib/stores/sessionStore';
 	import { onMount } from 'svelte';
 
@@ -86,6 +87,9 @@
 		{/if}
 
 		<AdminPanel bind:adminKey />
+
+		<!-- Tracing Controls -->
+		<TracingControls />
 	</div>
 
 	<!-- Right Column: Event Log, Participant Management, and Quick Info -->

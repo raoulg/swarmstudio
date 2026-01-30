@@ -9,6 +9,7 @@ export interface Participant {
 	velocity_magnitude?: number;
 	color?: string;
 	role?: string; // For future use (GWO, ABC)
+	emojis?: string[]; // Participant emojis
 }
 
 export interface SessionConfig {
@@ -25,6 +26,7 @@ export interface Session {
 	iteration?: number;
 	currentPhase?: 'waiting' | 'walking' | 'revealing';
 }
+
 export interface LogEntry {
 	id: string;
 	timestamp: string;
@@ -32,11 +34,67 @@ export interface LogEntry {
 	data?: unknown;
 }
 
+// Position history for tracing
+export interface PositionHistoryEntry {
+	position: [number, number];
+	timestamp: number;
+	iteration?: number;
+}
+
+export interface ParticipantHistory {
+	[participantId: string]: PositionHistoryEntry[];
+}
+
+export type TracingMode = 'none' | 'single-step' | 'full-lines' | 'full-dots' | 'single-participant';
+
+export interface TracingConfig {
+	mode: TracingMode;
+	selectedParticipantId?: string;
+	maxHistoryLength: number; // Maximum number of positions to keep
+}
+
 // Create stores
 export const sessionState = writable<Session>({ participants: [] });
 export const participantId = writable<string | null>(null);
 export const eventLog = writable<LogEntry[]>([]);
 export const isAdminView = writable<boolean>(false);
+
+// Position history for tracing
+export const participantHistory = writable<ParticipantHistory>({});
+
+// Tracing config with localStorage sync
+function createTracingConfigStore() {
+	const STORAGE_KEY = 'swarmcraft_tracing_config';
+
+	// Load initial value from localStorage
+	const storedValue = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+	const initialValue: TracingConfig = storedValue
+		? JSON.parse(storedValue)
+		: { mode: 'none', maxHistoryLength: 100 };
+
+	const store = writable<TracingConfig>(initialValue);
+
+	// Subscribe to changes and save to localStorage
+	if (typeof window !== 'undefined') {
+		store.subscribe(value => {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+			console.log('Tracing config updated:', value);
+		});
+
+		// Listen for changes in other tabs
+		window.addEventListener('storage', (event) => {
+			if (event.key === STORAGE_KEY && event.newValue) {
+				const newValue = JSON.parse(event.newValue);
+				console.log('Tracing config updated from another tab:', newValue);
+				store.set(newValue);
+			}
+		});
+	}
+
+	return store;
+}
+
+export const tracingConfig = createTracingConfigStore();
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -58,6 +116,43 @@ export function logEvent(message: string, data?: unknown) {
 }
 
 export const latestSession = writable<{ code: string; id: string } | null>(null);
+
+// Helper to add position to history
+export function addPositionToHistory(participantId: string, position: [number, number], iteration?: number) {
+	participantHistory.update((history) => {
+		const participantPositions = history[participantId] || [];
+		const newEntry: PositionHistoryEntry = {
+			position,
+			timestamp: Date.now(),
+			iteration
+		};
+
+		// Add new position
+		const updatedPositions = [...participantPositions, newEntry];
+
+		// Limit history length (use fixed value to avoid subscription issues)
+		const maxLength = 100;
+		const trimmedPositions = updatedPositions.slice(-maxLength);
+
+		const newHistory = {
+			...history,
+			[participantId]: trimmedPositions
+		};
+
+		console.log(`Position history updated for ${participantId}:`, {
+			totalParticipants: Object.keys(newHistory).length,
+			positionsForThisParticipant: trimmedPositions.length,
+			latestPosition: position
+		});
+
+		return newHistory;
+	});
+}
+
+// Helper to clear all history
+export function clearPositionHistory() {
+	participantHistory.set({});
+}
 
 // let socket: WebSocket | null = null;
 
