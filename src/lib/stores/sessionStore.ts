@@ -4,7 +4,8 @@ import { writable } from 'svelte/store';
 export interface Participant {
 	id: string;
 	name: string;
-	position?: [number, number];
+	position?: [number, number]; // Grid position [row, col]
+	continuous_position?: [number, number]; // Actual continuous coordinates [x, y]
 	fitness?: number;
 	velocity_magnitude?: number;
 	color?: string;

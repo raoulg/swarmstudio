@@ -164,15 +164,20 @@
 				<div class="space-y-12">
 					<!-- Position Display -->
 					<div class="space-y-4">
-						<h2 class="text-2xl text-gray-200">Position</h2>
+						<h2 class="text-2xl text-gray-200">Grid Position</h2>
 						<div class="text-6xl font-mono font-bold">
 							[{me?.position ? me.position.join(', ') : 'N/A'}]
 						</div>
+						{#if me?.continuous_position}
+							<div class="text-3xl font-mono text-gray-400">
+								({me.continuous_position[0].toFixed(2)}, {me.continuous_position[1].toFixed(2)})
+							</div>
+						{/if}
 					</div>
 
-					<!-- Fitness Score -->
+					<!-- Function Score -->
 					<div class="space-y-4">
-						<h2 class="text-2xl text-gray-200">Fitness</h2>
+						<h2 class="text-2xl text-gray-200">Function Value</h2>
 						<div class="text-8xl font-bold animate-pulse">
 							{me?.fitness ? me.fitness.toFixed(2) : '???'}
 						</div>
@@ -192,11 +197,17 @@
 					<h2 class="font-bold text-2xl mb-4 text-center">{me.name}</h2>
 					<div class="space-y-4 text-lg">
 						<div class="flex justify-between items-center">
-							<span>Position:</span>
+							<span>Grid Position:</span>
 							<span class="font-mono text-xl">[{me.position ? me.position.join(', ') : 'Waiting...'}]</span>
 						</div>
+						{#if me.continuous_position}
+							<div class="flex justify-between items-center text-sm">
+								<span>Continuous:</span>
+								<span class="font-mono text-gray-400">({me.continuous_position[0].toFixed(2)}, {me.continuous_position[1].toFixed(2)})</span>
+							</div>
+						{/if}
 						<div class="flex justify-between items-center">
-							<span>Fitness Score:</span>
+							<span>Function Value:</span>
 							<span class="font-mono text-xl font-bold">???</span>
 						</div>
 						<div class="flex justify-between items-center text-sm opacity-50">

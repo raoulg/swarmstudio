@@ -79,7 +79,7 @@
 										<div
 											class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
 											style="background-color: {participant.color || '#888'}; z-index: 10;"
-											title="{participant.name} - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
+											title="{participant.name} - Grid: [{participant.position?.join(', ')}] - Actual: ({participant.continuous_position?.[0]?.toFixed(2) || 'N/A'}, {participant.continuous_position?.[1]?.toFixed(2) || 'N/A'}) - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
 										>
 											<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">
 												{participant.emojis ? participant.emojis.join('') : ''}
@@ -150,13 +150,17 @@
 			<div class="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center">
 				<div class="w-12 text-center">Icon</div>
 				<div class="flex-grow pl-2">Name</div>
-				<div class="w-16 text-center">Pos</div>
-				<div class="w-16 text-right pr-2">Score</div>
+				<div class="w-20 text-center">POS</div>
+				<div class="w-16 text-right pr-2">f</div>
 			</div>
 
 			<div class="flex-1 overflow-y-auto pr-1 space-y-0.5">
 				{#each sortedParticipants as participant (participant.id)}
-					<div class="bg-gray-800/80 rounded p-1 border-l-4 transition-all hover:bg-gray-700" style="border-l-color: {participant.color || '#888'};">
+					<div
+						class="bg-gray-800/80 rounded p-1 border-l-4 transition-all hover:bg-gray-700"
+						style="border-l-color: {participant.color || '#888'};"
+						title="{participant.name} - Continuous: ({participant.continuous_position?.[0]?.toFixed(2) || 'N/A'}, {participant.continuous_position?.[1]?.toFixed(2) || 'N/A'})"
+					>
 						<div class="flex items-center text-sm">
 							<!-- Emoji Icon -->
 							<div class="w-12 text-lg flex-shrink-0 text-center whitespace-nowrap overflow-visible">
@@ -168,9 +172,20 @@
 								{participant.name}
 							</div>
 
-							<!-- Position -->
-							<div class="w-16 text-xs text-gray-500 font-mono text-center">
-								{participant.position ? `[${participant.position[0]},${participant.position[1]}]` : '[-]'}
+							<!-- Grid Position with continuous position on hover -->
+							<div class="w-20 text-xs text-gray-400 font-mono text-center">
+								{#if participant.position}
+									<div class="leading-tight">
+										<div class="text-gray-300">[{participant.position[0]},{participant.position[1]}]</div>
+										{#if participant.continuous_position}
+											<div class="text-[9px] text-gray-500">
+												({participant.continuous_position[0].toFixed(1)},{participant.continuous_position[1].toFixed(1)})
+											</div>
+										{/if}
+									</div>
+								{:else}
+									<div>[-]</div>
+								{/if}
 							</div>
 
 							<!-- Fitness Score -->

@@ -10,10 +10,13 @@
 	<div class="font-bold text-base">{participant.name}</div>
 	<div>ID: <span class="font-mono text-xs">{participant.id}</span></div>
 	{#if participant.position}
-		<div>Position: [{participant.position.join(', ')}]</div>
+		<div>Grid: <span class="font-mono">[{participant.position.join(', ')}]</span></div>
+	{/if}
+	{#if participant.continuous_position}
+		<div>Continuous: <span class="font-mono text-xs">({participant.continuous_position[0].toFixed(2)}, {participant.continuous_position[1].toFixed(2)})</span></div>
 	{/if}
 	{#if participant.fitness !== undefined}
-		<div>Fitness: {participant.fitness.toFixed(3)}</div>
+		<div>Function: {participant.fitness.toFixed(3)}</div>
 	{/if}
 	{#if participant.velocity_magnitude !== undefined}
 		<div>Speed: {participant.velocity_magnitude.toFixed(3)}</div>
