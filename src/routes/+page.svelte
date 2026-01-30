@@ -132,7 +132,7 @@
 			<!-- Name at top -->
 			<div class="w-full text-center pt-6 pb-4">
 				<div class="inline-block text-xl font-bold bg-black/30 px-6 py-3 rounded-lg shadow-lg">
-					{me?.name}
+					{me?.emojis ? me.emojis.join('') : ''} {me?.name}
 				</div>
 			</div>
 
@@ -156,10 +156,9 @@
 			<!-- Name at top -->
 			<div class="w-full text-center pt-6 pb-4">
 				<div class="inline-block text-xl font-bold bg-black/30 px-6 py-3 rounded-lg shadow-lg">
-					{me?.name}
+					{me?.emojis ? me.emojis.join('') : ''} {me?.name}
 				</div>
 			</div>
-
 			<div class="flex-1 flex items-center justify-center text-center space-y-12 px-4">
 				<div class="space-y-12">
 					<!-- Position Display -->
@@ -194,7 +193,9 @@
 			</header>
 			{#if me}
 				<div class="card bg-secondary-dark p-6 rounded-lg w-full max-w-lg" style="border: 2px solid {me.color || 'var(--color-bg-2)'};">
-					<h2 class="font-bold text-2xl mb-4 text-center">{me.name}</h2>
+					<h2 class="font-bold text-2xl mb-4 text-center">
+						{me.emojis ? me.emojis.join('') : ''} {me.name}
+					</h2>
 					<div class="space-y-4 text-lg">
 						<div class="flex justify-between items-center">
 							<span>Grid Position:</span>
