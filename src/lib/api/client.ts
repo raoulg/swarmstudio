@@ -212,15 +212,15 @@ export function connectAdminWebSocket(sessionId: string) {
 
 // --- Core API Functions ---
 // Configuration constants - should match backend swarmcraft/config.py
-const DEFAULT_GRID_SIZE = 10;
+const DEFAULT_GRID_SIZE = 25;
 
-export async function createSession(adminKey: string, landscape: string, iterations: number) {
+export async function createSession(adminKey: string, landscape: string, iterations: number, gridSize: number = DEFAULT_GRID_SIZE) {
 	const response = await fetch(`${API_BASE_URL}/admin/create-session`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
 		body: JSON.stringify({
 			landscape_type: landscape,
-			grid_size: DEFAULT_GRID_SIZE,  // From swarmcraft/config.py
+			grid_size: gridSize,
 			max_participants: 50,
 			max_iterations: iterations,
 			min_exploration_probability: 0.01,

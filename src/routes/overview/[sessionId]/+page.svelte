@@ -1,8 +1,8 @@
 <script lang="ts">
 	// src/routes/overview/[sessionId]/+page.svelte
-	import { sessionState } from '$lib/stores/sessionStore';
-	import { connectAdminWebSocket } from '$lib/api/client';
-	import { onMount } from 'svelte';
+	import { sessionState, tracingConfig } from '$lib/stores/sessionStore';
+	import { connectAdminWebSocket, API_BASE_URL } from '$lib/api/client';
+	import { onMount, tick } from 'svelte';
 	import { page } from '$app/stores';
 	import TraceOverlay from '$lib/components/TraceOverlay.svelte';
 
@@ -24,6 +24,83 @@
 		...participants
 			.filter(p => p.fitness === null || p.fitness === undefined)
 	];
+
+	// Landscape Visualization Logic
+	$: showLandscape = $tracingConfig.showLandscape;
+	let landscapeCanvas: HTMLCanvasElement;
+	let landscapeData: { values: number[], min_value: number, max_value: number, grid_size: number } | null = null;
+	let loadingLandscape = false;
+	let loadedSessionId: string | null = null;
+	const VIZ_RESOLUTION = 400; // High resolution for canvas
+
+	$: if (showLandscape && sessionId && (!landscapeData || loadedSessionId !== sessionId) && !loadingLandscape) {
+		loadingLandscape = true;
+		fetch(`${API_BASE_URL}/session/${sessionId}/landscape?resolution=${VIZ_RESOLUTION}`)
+			.then(res => res.json())
+			.then(data => {
+				landscapeData = data;
+				loadedSessionId = sessionId;
+				loadingLandscape = false;
+				console.log('High-res landscape data loaded:', data);
+				renderLandscapeToCanvas();
+			})
+			.catch(err => {
+				console.error('Failed to load landscape:', err);
+				loadingLandscape = false;
+			});
+	}
+
+	$: if (showLandscape && landscapeData && landscapeCanvas) {
+		renderLandscapeToCanvas();
+	}
+
+	async function renderLandscapeToCanvas() {
+		if (!landscapeCanvas || !landscapeData) return;
+		
+		// Ensure canvas is ready
+		await tick();
+		
+		const ctx = landscapeCanvas.getContext('2d');
+		if (!ctx) return;
+
+		const { values, min_value, max_value, grid_size } = landscapeData;
+		const width = landscapeCanvas.width;
+		const height = landscapeCanvas.height;
+		
+		// Use ImageData for faster pixel manipulation
+		const imgData = ctx.createImageData(width, height);
+		const data = imgData.data;
+
+		for (let i = 0; i < values.length; i++) {
+			const value = values[i];
+			// Normalize 0-1
+			const normalized = Math.max(0, Math.min(1, (value - min_value) / (max_value - min_value)));
+			
+			// Color scale: Green (low loss/good) -> Yellow -> Red (high loss/bad)
+			let r, g, b;
+			if (normalized < 0.5) {
+				// Green to Yellow
+				r = Math.floor(255 * (normalized * 2));
+				g = 255;
+				b = 0;
+			} else {
+				// Yellow to Red
+				r = 255;
+				g = Math.floor(255 * (1 - (normalized - 0.5) * 2));
+				b = 0;
+			}
+
+			// Set pixel color (i corresponds to the flat array from backend, which is row-major)
+			// Index in ImageData is i * 4 (RGBA)
+			const idx = i * 4;
+			data[idx] = r;     // R
+			data[idx + 1] = g; // G
+			data[idx + 2] = b; // B
+			data[idx + 3] = 50; // Alpha (0-255), ~0.2 opacity like before
+		}
+
+		ctx.putImageData(imgData, 0, 0);
+	}
 
 	onMount(() => {
 		// If sessionId is provided in URL, connect to that session
@@ -104,21 +181,30 @@
 						<div
 							class="relative border-4 border-blue-500 bg-gray-800 rounded-lg overflow-hidden shadow-2xl aspect-square"
 						>
+							<!-- High-Res Landscape Canvas -->
+							<canvas
+								bind:this={landscapeCanvas}
+								width={VIZ_RESOLUTION}
+								height={VIZ_RESOLUTION}
+								class="absolute inset-0 w-full h-full pointer-events-none"
+								style="display: {showLandscape ? 'block' : 'none'}; z-index: 0;"
+							/>
+
 							<!-- Grid cells -->
 							<div
 								class="grid absolute inset-0"
-								style="grid-template-columns: repeat({gridSize}, 1fr);"
+								style="grid-template-columns: repeat({gridSize}, 1fr); z-index: 10;"
 							>
 								{#each Array(gridSize * gridSize) as _, i}
 									{@const row = Math.floor(i / gridSize)}
 									{@const col = i % gridSize}
 									{@const participant = participants.find(p => p.position && p.position[0] === col && p.position[1] === (gridSize - 1 - row))}
 
-									<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
+									<div class="relative w-full h-full border border-gray-600/30">
 										{#if participant}
 											<div
 												class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
-												style="background-color: {participant.color || '#888'}; z-index: 10;"
+												style="background-color: {participant.color || '#888'};"
 												title="{participant.name} - Grid: [{participant.position?.join(', ')}] - Actual: ({participant.continuous_position?.[0]?.toFixed(2) || 'N/A'}, {participant.continuous_position?.[1]?.toFixed(2) || 'N/A'}) - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
 											>
 												<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">

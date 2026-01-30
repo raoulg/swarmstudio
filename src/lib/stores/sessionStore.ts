@@ -53,6 +53,7 @@ export interface TracingConfig {
 	mode: TracingMode;
 	selectedParticipantId?: string;
 	maxHistoryLength: number; // Maximum number of positions to keep
+	showLandscape?: boolean;
 }
 
 // Create stores
@@ -72,7 +73,7 @@ function createTracingConfigStore() {
 	const storedValue = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
 	const initialValue: TracingConfig = storedValue
 		? JSON.parse(storedValue)
-		: { mode: 'none', maxHistoryLength: 100 };
+		: { mode: 'none', maxHistoryLength: 100, showLandscape: false };
 
 	const store = writable<TracingConfig>(initialValue);
 

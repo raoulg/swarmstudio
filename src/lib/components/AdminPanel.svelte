@@ -20,6 +20,7 @@
 	export let adminKey = '';
 	export let landscapeType = 'quadratic';
 	export let maxIterations = 20;
+	export let gridSize = 25;
 	export let isLoading = false;
 	export let existingSessions: SessionSummary[] = [];
 
@@ -31,21 +32,37 @@
 		}
 	});
 
+	// Auto-load sessions when key is entered
+	$: if (adminKey) {
+		loadExistingSessions();
+	}
+
+	// Sync local state with active session config
+	$: if ($sessionState.config) {
+		landscapeType = $sessionState.config.landscape_type || 'quadratic';
+		gridSize = $sessionState.config.grid_size || 25;
+		// Optional: maxIterations is not currently in session.config, but if it were:
+		// maxIterations = $sessionState.config.max_iterations || 20;
+	}
+
 	async function loadExistingSessions() {
+		if (!adminKey) return;
 		try {
 			existingSessions = await listSessions(adminKey);
 			console.log('Existing sessions:', existingSessions);
 			
-			// Auto-reconnection logic
-			const activeSession = existingSessions.find(s => s.status === 'active');
-			const latestSession = existingSessions
-				.filter(s => s.participant_count > 0)
-				.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-			
-			const targetSession = activeSession || latestSession;
-			
-			if (targetSession) {
-				await reconnectToSession(targetSession);
+			// Auto-reconnection logic ONLY if we don't have an active session ID
+			if (!$sessionState.id) {
+				const activeSession = existingSessions.find(s => s.status === 'active');
+				const latestSession = existingSessions
+					.filter(s => s.participant_count > 0)
+					.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+				
+				const targetSession = activeSession || latestSession;
+				
+				if (targetSession) {
+					await reconnectToSession(targetSession);
+				}
 			}
 		} catch (error) {
 			console.log('Error loading sessions:', error);
@@ -55,7 +72,7 @@
 	async function handleCreateSession() {
 		isLoading = true;
 		try {
-			const data = await createSession(adminKey, landscapeType, maxIterations);
+			const data = await createSession(adminKey, landscapeType, maxIterations, gridSize);
 			console.log('=== ADMIN SESSION CREATION DEBUG ===');
 			console.log('Session created:', data);
 			console.log('Current sessionState store:', $sessionState);
@@ -67,10 +84,17 @@
 				id: data.session_id, 
 				code: data.session_code, 
 				participants: [],
-				status: 'waiting' 
+				status: 'waiting',
+				// Optimistically set config so UI updates immediately
+				config: {
+					grid_size: gridSize,
+					landscape_type: landscapeType
+				}
 			});
 			
 			connectAdminWebSocket(data.session_id);
+			// Refresh list to show new session
+			await loadExistingSessions();
 		} catch (e) {
 			alert(e.message);
 		}
@@ -121,15 +145,26 @@
 			</div>
 		{/if}
 		<div class="flex flex-col gap-2 p-4 border border-blue-500 rounded-lg">
-			<h3 class="font-bold text-lg">Existing Sessions</h3>
+			<div class="flex justify-between items-center">
+				<h3 class="font-bold text-lg">Existing Sessions</h3>
+				<button 
+					on:click={loadExistingSessions}
+					disabled={!adminKey}
+					class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded"
+				>
+					🔄 Refresh
+				</button>
+			</div>
 			{#if existingSessions.length > 0}
-				<div class="text-sm space-y-1">
+				<div class="text-sm space-y-1 max-h-40 overflow-y-auto">
 					{#each existingSessions as session (session.session_id)}
 						<div class="flex justify-between items-center p-2 bg-gray-700 rounded">
 							<div class="flex-grow">
 								<span class="font-mono">{session.session_code}</span>
 								<span class="text-gray-400">({session.status})</span>
-								<span class="text-green-400">{session.participant_count} participants</span>
+								{#if session.session_id === $sessionState.id}
+									<span class="text-blue-400 font-bold ml-2">← ACTIVE</span>
+								{/if}
 							</div>
 							<div class="flex gap-2">
 								<button
@@ -192,6 +227,10 @@
 				</select>
 			</div>
 			<div>
+				<label for="grid-size">Grid Size</label>
+				<input type="number" id="grid-size" bind:value={gridSize} min="10" max="100" />
+			</div>
+			<div>
 				<label for="max-iterations">Max Iterations (Annealing)</label>
 				<input type="number" id="max-iterations" bind:value={maxIterations} />
 			</div>
@@ -206,10 +245,13 @@
 			<div class="font-mono text-sm space-y-1">
 				<div>Session ID: {$sessionState.id ?? 'N/A'}</div>
 				<div>Status: {$sessionState.status ?? 'N/A'}</div>
+				<div>Landscape: <span class="text-green-400 font-bold uppercase">{$sessionState.config?.landscape_type ?? 'N/A'}</span></div>
+				<div>Grid Size: <span class="font-bold">{$sessionState.config?.grid_size ?? 'N/A'}</span></div>
 				<div>Iteration: {$sessionState.iteration ?? 'N/A'}</div>
 			</div>
 			
 			<div class="grid grid-cols-2 gap-2 mt-2">
+
 				<button on:click={() => handleAction('start')} disabled={isLoading || !$sessionState.id}>
 					Start Session
 				</button>

@@ -48,6 +48,23 @@
 		</button>
 	</div>
 
+	<!-- Landscape Toggle -->
+	<div class="flex items-center justify-between bg-gray-700/50 p-2 rounded">
+		<span class="text-sm font-medium text-gray-300">Show Loss Landscape</span>
+		<button
+			on:click={() => tracingConfig.update(c => ({ ...c, showLandscape: !c.showLandscape }))}
+			class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {config.showLandscape
+				? 'bg-blue-600'
+				: 'bg-gray-600'}"
+		>
+			<span
+				class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {config.showLandscape
+					? 'translate-x-6'
+					: 'translate-x-1'}"
+			/>
+		</button>
+	</div>
+
 	<!-- Tracing Mode Selection -->
 	<div class="space-y-2">
 		<label class="text-sm font-medium text-gray-300">Tracing Mode:</label>
