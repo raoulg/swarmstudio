@@ -41,7 +41,7 @@
 		<h3 class="font-bold text-blue-400">Tracing Controls</h3>
 		<button
 			on:click={clearHistory}
-			class="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded transition-colors"
+			class="text-xs !px-2 !py-1 !bg-red-600 hover:!bg-red-700 rounded transition-colors !border-0"
 			title="Clear position history"
 		>
 			Clear History
@@ -49,34 +49,47 @@
 	</div>
 
 	<!-- Landscape Toggle -->
-	<div class="flex items-center justify-between bg-gray-700/50 p-2 rounded">
-		<span class="text-sm font-medium text-gray-300">Show Loss Landscape</span>
+	<div class="flex items-center justify-between bg-gray-700/50 p-3 rounded-lg border border-gray-600">
+		<div class="flex flex-col">
+			<span class="text-sm font-bold text-gray-200">Show Loss Landscape</span>
+			<span class="text-xs {config.showLandscape ? 'text-green-400' : 'text-gray-400'}">
+				{config.showLandscape ? 'Currently Visible' : 'Currently Hidden'}
+			</span>
+		</div>
 		<button
 			on:click={() => tracingConfig.update(c => ({ ...c, showLandscape: !c.showLandscape }))}
-			class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {config.showLandscape
-				? 'bg-blue-600'
-				: 'bg-gray-600'}"
+			class="relative inline-flex h-7 w-16 items-center justify-center !rounded-full transition-all focus:outline-none !border-0 !p-0 {config.showLandscape
+				? '!bg-green-600 !text-white'
+				: '!bg-gray-600 !text-gray-400'}"
+			aria-pressed={config.showLandscape}
+			aria-label="Toggle Loss Landscape"
 		>
-			<span
-				class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {config.showLandscape
-					? 'translate-x-6'
-					: 'translate-x-1'}"
-			/>
+			<span class="text-[10px] font-black tracking-tighter">
+				{config.showLandscape ? 'ON' : 'OFF'}
+			</span>
 		</button>
 	</div>
 
 	<!-- Tracing Mode Selection -->
-	<div class="space-y-2">
-		<label class="text-sm font-medium text-gray-300">Tracing Mode:</label>
+	<div class="space-y-3">
+		<div class="flex items-center justify-between">
+			<span class="text-sm font-bold text-gray-200">Tracing Mode:</span>
+			{#if config.mode !== 'none'}
+				<span class="text-[10px] px-1.5 py-0.5 bg-green-900/50 text-green-400 border border-green-500/30 rounded uppercase tracking-wider font-bold">Active</span>
+			{/if}
+		</div>
 		<div class="grid grid-cols-2 gap-2">
 			{#each tracingModes as { mode, label, description }}
 				<button
 					on:click={() => setMode(mode)}
-					class="px-3 py-2 rounded text-sm transition-colors {config.mode === mode
-						? 'bg-blue-600 text-white'
-						: 'bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+					class="relative !px-3 !py-2 rounded text-sm transition-all flex items-center justify-center gap-2 !border-0 {config.mode === mode
+						? '!bg-blue-600 !text-white shadow-lg ring-2 ring-blue-400/50'
+						: '!bg-gray-700 !text-gray-300 hover:!bg-gray-600'}"
 					title={description}
 				>
+					{#if config.mode === mode}
+						<span class="w-2 h-2 bg-white rounded-full animate-pulse flex-shrink-0"></span>
+					{/if}
 					{label}
 				</button>
 			{/each}
@@ -86,14 +99,14 @@
 	<!-- Participant Selection (only shown for single-participant mode) -->
 	{#if config.mode === 'single-participant'}
 		<div class="space-y-2">
-			<label class="text-sm font-medium text-gray-300">Select Participant:</label>
+			<span class="text-sm font-medium text-gray-300">Select Participant:</span>
 			<div class="max-h-40 overflow-y-auto space-y-1">
 				{#each participants as participant}
 					<button
 						on:click={() => selectParticipant(participant.id)}
-						class="w-full px-3 py-2 rounded text-sm text-left transition-colors flex items-center gap-2 {config.selectedParticipantId === participant.id
-							? 'bg-blue-600 text-white'
-							: 'bg-gray-700 text-gray-300 hover:bg-gray-600'}"
+						class="w-full !px-3 !py-2 rounded text-sm text-left transition-colors flex items-center gap-2 !border-0 {config.selectedParticipantId === participant.id
+							? '!bg-blue-600 !text-white'
+							: '!bg-gray-700 !text-gray-300 hover:!bg-gray-600'}"
 					>
 						<div
 							class="w-3 h-3 rounded-full flex-shrink-0"
