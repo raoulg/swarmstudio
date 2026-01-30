@@ -4,6 +4,7 @@
 	import { connectAdminWebSocket } from '$lib/api/client';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import FitnessLegend from '$lib/components/FitnessLegend.svelte';
 
 	// Get session ID from URL params if provided
 	$: sessionId = $page.params.sessionId;
@@ -103,6 +104,9 @@
 	<!-- Leaderboard (1/3 width) -->
 	<div class="col-span-1 flex flex-col">
 		<h2 class="text-2xl font-bold mb-4 text-green-400">Leaderboard</h2>
+		<div class="mb-4">
+			<FitnessLegend />
+		</div>
 		<!-- QR Code Section -->
 		{#if session.code}
 			<div class="mb-6 text-center">
@@ -117,29 +121,47 @@
 		{/if}
 		
 		{#if sortedParticipants.length > 0}
-			<div class="flex-1 overflow-y-auto space-y-2">
+			<!-- Column Headers -->
+			<div class="px-2 py-1 text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center">
+				<div class="flex-grow">Participant</div>
+				<div class="h-4 w-1 bg-blue-400 mx-2 flex-shrink-0"></div>
+				<div class="w-20 text-center">Pos</div>
+				<div class="h-4 w-1 bg-blue-400 mx-2 flex-shrink-0"></div>
+				<div class="w-20 text-right pr-2">Score</div>
+			</div>
+
+			<div class="flex-1 overflow-y-auto space-y-1">
 				{#each sortedParticipants as participant (participant.id)}
-					<div class="bg-gray-800 rounded-lg p-3 border-l-4 transition-all" style="border-left-color: {participant.color || '#888'};">
-						<div class="flex items-center justify-between gap-4">
-							<!-- Name & Emojis -->
-							<div class="flex items-center gap-2 flex-grow min-w-0">
-								<span class="font-semibold text-lg truncate">{participant.name}</span>
-								<span class="text-xl flex-shrink-0">{participant.emojis ? participant.emojis.join('') : ''}</span>
+					<div class="bg-gray-800 rounded-lg p-1 border-r-4 transition-all" style="border-right-color: {participant.color || '#888'};">
+						<div class="flex items-center">
+							<!-- Participant (Emoji + Name) -->
+							<div class="flex-grow min-w-0 flex items-center gap-2">
+								<div class="w-8 text-lg flex-shrink-0 text-center">
+									{participant.emojis ? participant.emojis.join('') : ''}
+								</div>
+								<div class="h-4 w-px bg-gray-700"></div>
+								<span class="font-semibold text-base truncate">{participant.name}</span>
 							</div>
-							
+
+							<!-- Divider -->
+							<div class="h-6 w-1 bg-blue-400 mx-2 flex-shrink-0"></div>
+
 							<!-- Position -->
-							<div class="text-sm text-gray-400 font-mono whitespace-nowrap">
-								[{participant.position ? participant.position.join(', ') : '..'}]
+							<div class="w-20 text-xs text-gray-400 font-mono text-center">
+								{participant.position ? `[${participant.position[0]}, ${participant.position[1]}]` : '[-]'}
 							</div>
-							
+
+							<!-- Divider -->
+							<div class="h-6 w-1 bg-blue-400 mx-2 flex-shrink-0"></div>
+
 							<!-- Fitness Score -->
-							<div class="text-right min-w-[4rem]">
+							<div class="w-20 text-right pr-2">
 								{#if session.currentPhase === 'revealing'}
-									<div class="text-xl font-bold text-white font-mono">
-										{participant.fitness?.toFixed(2) || 'N/A'}
+									<div class="text-lg font-bold text-green-400 font-mono">
+										{participant.fitness?.toFixed(1) || 'N/A'}
 									</div>
 								{:else}
-									<div class="text-xl font-bold text-gray-500 font-mono">
+									<div class="text-lg font-bold text-gray-500 font-mono">
 										???
 									</div>
 								{/if}

@@ -1,9 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+
+@theme {
+	--color-bg-0: #1a1a2e;
+	--color-bg-1: #16213e;
+	--color-bg-2: #0f3460;
+	--color-theme-1: #e94560;
+	--color-theme-2: #4075a6;
+	--color-text: #dcdcdc;
+}
 
 @import '@fontsource/fira-mono';
-@tailwind forms;
 
 :root {
 	--font-body:
@@ -11,14 +18,6 @@
 		'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
 
-	/* --- Dark Theme Colors --- */
-	--color-bg-0: #1a1a2e; /* background-dark */
-	--color-bg-1: #16213e; /* primary-dark */
-	--color-bg-2: #0f3460; /* secondary-dark */
-	--color-theme-1: #e94560; /* accent-color */
-	--color-theme-2: #4075a6; /* A secondary accent color from your original theme */
-	--color-text: #dcdcdc; /* text-color */
-	
 	/* HSL versions for gradient animations */
 	--background-dark-hsl: 240 30% 14%; /* hsl equivalent of #1a1a2e */
 	--primary-dark-hsl: 222 50% 16%; /* hsl equivalent of #16213e */
