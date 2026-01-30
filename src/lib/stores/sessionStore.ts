@@ -39,6 +39,7 @@ export interface PositionHistoryEntry {
 	position: [number, number];
 	timestamp: number;
 	iteration?: number;
+	color?: string;
 }
 
 export interface ParticipantHistory {
@@ -118,13 +119,14 @@ export function logEvent(message: string, data?: unknown) {
 export const latestSession = writable<{ code: string; id: string } | null>(null);
 
 // Helper to add position to history
-export function addPositionToHistory(participantId: string, position: [number, number], iteration?: number) {
+export function addPositionToHistory(participantId: string, position: [number, number], color?: string, iteration?: number) {
 	participantHistory.update((history) => {
 		const participantPositions = history[participantId] || [];
 		const newEntry: PositionHistoryEntry = {
 			position,
 			timestamp: Date.now(),
-			iteration
+			iteration,
+			color
 		};
 
 		// Add new position

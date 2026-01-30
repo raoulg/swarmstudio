@@ -100,7 +100,7 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 					data.participants.forEach((participant: any) => {
 						if (participant.position) {
 							console.log(`Adding position for ${participant.id}: [${participant.position}]`);
-							addPositionToHistory(participant.id, participant.position, data.iteration);
+							addPositionToHistory(participant.id, participant.position, participant.color, data.iteration);
 						} else {
 							console.log(`Participant ${participant.id} has no position`);
 						}
@@ -155,7 +155,9 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 			case 'participant_moved':
 				// Track position change
 				if (data.position) {
-					addPositionToHistory(data.participant_id, data.position);
+					// Get current color for history
+					const currentP = get(sessionState).participants.find(p => p.id === data.participant_id);
+					addPositionToHistory(data.participant_id, data.position, currentP?.color);
 				}
 
 				sessionState.update((s) => ({
