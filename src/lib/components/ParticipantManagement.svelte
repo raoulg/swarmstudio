@@ -18,7 +18,13 @@
 
 <div class="card w-full flex flex-col gap-4">
 	<h2 class="text-2xl font-bold text-purple-400">Participant Management</h2>
-	
+
+	{#if !adminKey}
+		<div class="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 text-sm">
+			⚠️ <strong>Admin key required</strong> to remove participants
+		</div>
+	{/if}
+
 	{#if $sessionState.participants && $sessionState.participants.length > 0}
 		<div class="space-y-2">
 			{#each $sessionState.participants as participant (participant.id)}

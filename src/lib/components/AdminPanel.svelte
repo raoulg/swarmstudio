@@ -24,6 +24,8 @@
 	export let existingSessions: SessionSummary[] = [];
 
 	onMount(async () => {
+		console.log('=== AdminPanel mounted ===');
+		console.log('adminKey on mount:', adminKey ? 'SET' : 'NOT SET');
 		if (adminKey) {
 			await loadExistingSessions();
 		}
@@ -113,6 +115,11 @@
 	<!-- Session Management Section -->
 	<div class="card w-full flex flex-col gap-4">
 		<h2 class="text-2xl font-bold text-blue-400">Session Management</h2>
+		{#if !adminKey}
+			<div class="bg-yellow-900/30 border border-yellow-500/50 rounded-lg p-3 text-sm">
+				⚠️ <strong>Enter admin key below</strong> to manage sessions
+			</div>
+		{/if}
 		<div class="flex flex-col gap-2 p-4 border border-blue-500 rounded-lg">
 			<h3 class="font-bold text-lg">Existing Sessions</h3>
 			{#if existingSessions.length > 0}
@@ -125,15 +132,22 @@
 								<span class="text-green-400">{session.participant_count} participants</span>
 							</div>
 							<div class="flex gap-2">
-								<button 
+								<button
 									class="text-xs bg-blue-600 px-2 py-1 rounded hover:bg-blue-700"
 									on:click={() => reconnectToSession(session)}
 								>
 									Connect
 								</button>
-								<button 
-									class="text-xs bg-red-600 px-2 py-1 rounded hover:bg-red-700"
-									on:click={() => handleDeleteSession(adminKey, session, loadExistingSessions)}
+								<button
+									class="text-xs bg-red-600 px-2 py-1 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+									on:click={() => {
+										console.log('Delete button clicked!');
+										console.log('adminKey:', adminKey ? 'SET' : 'NOT SET');
+										console.log('session:', session);
+										handleDeleteSession(adminKey, session, loadExistingSessions);
+									}}
+									disabled={!adminKey}
+									title={!adminKey ? "Enter admin key to delete sessions" : "Delete this session"}
 								>
 									Delete
 								</button>
@@ -155,8 +169,19 @@
 		<div class="flex flex-col gap-2 p-4 border border-secondary-dark rounded-lg">
 			<h3 class="font-bold text-lg">1. Create Session</h3>
 			<div>
-				<label for="admin-key">Admin Key</label>
-				<input type="password" id="admin-key" bind:value={adminKey} placeholder="Enter SWARM_API_KEY" />
+				<label for="admin-key" class="text-accent-color font-semibold">
+					Admin Key <span class="text-red-500">*</span>
+					{#if adminKey}
+						<span class="text-green-500 text-sm ml-2">✓ Key entered</span>
+					{/if}
+				</label>
+				<input
+					type="password"
+					id="admin-key"
+					bind:value={adminKey}
+					placeholder="Enter SWARM_API_KEY"
+					class="border-2 {adminKey ? 'border-green-500' : 'border-gray-600'}"
+				/>
 			</div>
 			<div>
 				<label for="landscape-type">Landscape</label>

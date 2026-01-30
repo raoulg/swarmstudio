@@ -11,21 +11,29 @@ export async function listSessions(adminKey: string) {
 }
 
 export async function deleteSession(adminKey: string, sessionId: string) {
+	console.log(`Deleting session ${sessionId} with admin key: ${adminKey.substring(0, 8)}...`);
 	const response = await fetch(`${API_BASE_URL}/admin/session/${sessionId}`, {
 		method: 'DELETE',
 		headers: { 'X-Admin-Key': adminKey }
 	});
-	if (!response.ok) throw new Error('Failed to delete session');
+	console.log(`Delete session response status: ${response.status}`);
+	if (!response.ok) {
+		const errorText = await response.text();
+		console.error(`Failed to delete session: ${response.status} - ${errorText}`);
+		throw new Error(`Failed to delete session: ${response.status} - ${errorText}`);
+	}
 	return response.json();
 }
 
 export async function handleDeleteSession(adminKey: string, session: SessionSummary, onSessionDeleted: () => Promise<void>) {
-	if (!confirm(`Delete session ${session.session_code}? This will disconnect all participants.`)) {
-		return;
-	}
+	console.log('=== handleDeleteSession called ===');
+	console.log('adminKey:', adminKey ? adminKey.substring(0, 10) + '...' : 'EMPTY');
+	console.log('session:', session);
+	console.log('Proceeding with deletion...');
 
 	try {
 		await deleteSession(adminKey, session.session_id);
+		console.log('Session deleted successfully, reloading session list...');
 		await onSessionDeleted();
 
 		// Clear current session if it's the one being deleted
@@ -36,6 +44,8 @@ export async function handleDeleteSession(adminKey: string, session: SessionSumm
 			}
 			return state;
 		});
+
+		alert(`Session ${session.session_code} deleted successfully!`);
 	} catch (err) {
 		const error = err instanceof Error ? err.message : 'Unknown error occurred';
 		alert(`Error deleting session: ${error}`);
@@ -44,11 +54,8 @@ export async function handleDeleteSession(adminKey: string, session: SessionSumm
 
 // Participant Management Functions
 export async function removeParticipant(adminKey: string, sessionId: string, participantId: string) {
-	if (!confirm('Remove this participant from the session?')) {
-		return;
-	}
-
 	try {
+		console.log(`Removing participant ${participantId} from session ${sessionId}`);
 		const response = await fetch(`${API_BASE_URL}/admin/session/${sessionId}/remove-participant`, {
 			method: 'POST',
 			headers: {
@@ -58,11 +65,16 @@ export async function removeParticipant(adminKey: string, sessionId: string, par
 			body: JSON.stringify({ participant_id: participantId })
 		});
 
+		console.log(`Remove participant response status: ${response.status}`);
 		if (!response.ok) {
-			throw new Error('Failed to remove participant');
+			const errorText = await response.text();
+			console.error(`Failed to remove participant: ${response.status} - ${errorText}`);
+			throw new Error(`Failed to remove participant: ${response.status} - ${errorText}`);
 		}
 
-		console.log(`Participant ${participantId} removed`);
+		const result = await response.json();
+		console.log(`Participant ${participantId} removed successfully:`, result);
+		alert(`Participant removed successfully!`);
 	} catch (err) {
 		const error = err instanceof Error ? err.message : 'Unknown error occurred';
 		alert(`Error removing participant: ${error}`);
