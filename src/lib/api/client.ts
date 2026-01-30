@@ -51,8 +51,10 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 
 	websocket.onmessage = (event) => {
 		const data = JSON.parse(event.data);
-		console.log(`=== ALL WEBSOCKET MESSAGES ===`);
+		console.log(`=== WEBSOCKET MESSAGE RECEIVED ===`);
+		console.log('Timestamp:', new Date().toISOString());
 		console.log('Message type:', data.type);
+		console.log('Participant ID:', partId);
 		console.log('Full message:', data);
 		logEvent(`WS Received: ${data.type}`, data);
 

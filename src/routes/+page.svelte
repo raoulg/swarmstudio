@@ -10,8 +10,7 @@
 	let isLoading = false;
 	let movementState = 'waiting'; // 'waiting', 'moving', 'revealing'
 	let targetPosition = null;
-	let currentChaosLevel = 0; // 0-4 for 5 discrete levels
-	
+
 	// Reactive variables based on the session store
 	$: session = $sessionState;
 	$: participants = session.participants || [];
@@ -19,29 +18,25 @@
 	$: gridSize = config?.grid_size || 25;
 	$: me = participants.find((p) => p.id === $participantId);
 
-	// Chaos level descriptions and visual styles
-	const chaosLevels = [
-		{ name: "Crystal Order", emoji: "💎", description: "Precise movement", bg: "bg-blue-500" },
-		{ name: "Structured", emoji: "🏗️", description: "Organized approach", bg: "bg-green-500" },
-		{ name: "Balanced", emoji: "⚖️", description: "Mixed strategy", bg: "bg-yellow-500" },
-		{ name: "Turbulent", emoji: "🌪️", description: "High exploration", bg: "bg-orange-500" },
-		{ name: "Primordial Chaos", emoji: "🌋", description: "Pure randomness", bg: "bg-red-500" }
-	];
-
 	// Auto-reconnect on mount if saved session exists
 	onMount(async () => {
 		const savedSession = loadParticipantSession();
 		if (savedSession) {
 			console.log('Found saved session, attempting to reconnect:', savedSession);
 			isLoading = true;
+			errorMessage = 'Reconnecting to previous session...';
+
 			try {
-				await joinSession(savedSession.sessionCode, savedSession.participantId);
-				console.log('Successfully reconnected to saved session');
+				const result = await joinSession(savedSession.sessionCode, savedSession.participantId);
+				console.log('Successfully reconnected to saved session:', result);
+				errorMessage = ''; // Clear reconnecting message
 			} catch (error) {
 				console.error('Failed to reconnect to saved session:', error);
 				// Clear invalid saved session
 				clearParticipantSession();
-				errorMessage = 'Previous session expired. Please join again.';
+				participantId.set(null);
+				sessionState.set({ participants: [] });
+				errorMessage = 'Previous session no longer available. Please join a new session.';
 			} finally {
 				isLoading = false;
 			}
@@ -83,12 +78,10 @@
 		} else {
 			movementState = 'waiting';
 		}
-		
+
 		// Set target position when moving
 		if (me && movementState === 'moving' && me.position) {
 			targetPosition = me.position;
-			const speed = me.velocity_magnitude || 0;
-			currentChaosLevel = Math.min(4, Math.floor(speed / 2));
 		}
 	}
 
@@ -134,112 +127,51 @@
 		</div>
 
 	{:else if movementState === 'moving' && targetPosition}
-		<!-- Movement Instruction Screen -->
-		<div class="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-blue-900 text-white relative">
-			<!-- Name in top corner -->
-			<div class="absolute top-4 left-4 text-sm opacity-75">
-				{me?.name}
+		<!-- Movement Instruction Screen - Simplified -->
+		<div class="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-blue-900 text-white relative overflow-hidden">
+			<!-- Name in top right corner with bright background for testing -->
+			<div class="absolute top-4 right-4 text-lg font-bold bg-red-600 px-4 py-2 rounded shadow-lg z-50">
+				{me?.name} ✓
 			</div>
 
-			<div class="text-center space-y-8">
+			<div class="text-center space-y-12 px-4">
 				<!-- Target Coordinates -->
-				<div class="space-y-4">
-					<h1 class="text-2xl font-semibold text-gray-300">Move to Position:</h1>
-					<div class="text-5xl font-bold font-mono tracking-wider">
+				<div class="space-y-6">
+					<h1 class="text-3xl font-semibold text-gray-300">Move to Position</h1>
+					<div class="text-8xl font-bold font-mono tracking-wider">
 						[{targetPosition[0]}, {targetPosition[1]}]
 					</div>
 				</div>
-
-				<!-- Chaos Level Indicator -->
-				<div class="space-y-4">
-					<h2 class="text-xl text-gray-300">Your Movement Style:</h2>
-					<div class="flex flex-col items-center space-y-2">
-						<!-- Placeholder for future image -->
-						<div class="w-32 h-32 border-4 border-gray-400 rounded-lg flex items-center justify-center bg-gray-600">
-							<div class="text-5xl">{chaosLevels[currentChaosLevel].emoji}</div>
-						</div>
-						<div class="text-2xl font-semibold">{chaosLevels[currentChaosLevel].name}</div>
-						<div class="w-64 h-3 bg-gray-700 rounded-full overflow-hidden">
-							<div 
-								class="h-full transition-all duration-500 {chaosLevels[currentChaosLevel].bg}"
-								style="width: {((currentChaosLevel + 1) / 5) * 100}%"
-							></div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Movement Speed Display -->
-				{#if me?.velocity_magnitude}
-					<div class="space-y-2">
-						<h2 class="text-lg text-gray-300">Movement Speed</h2>
-						<div class="text-3xl font-bold">
-							{me.velocity_magnitude.toFixed(2)}
-						</div>
-					</div>
-				{/if}
-
-				<!-- No action button needed - auto-advances -->
 			</div>
 		</div>
 
 	{:else if movementState === 'revealing'}
-		<!-- Fitness Revelation Screen -->
-		<div 
+		<!-- Fitness Revelation Screen - Simplified -->
+		<div
 			class="w-full h-screen flex flex-col items-center justify-center text-white relative"
 			style="background: linear-gradient(135deg, {me?.color || '#888'}, {me?.color || '#888'}88);"
 		>
-			<!-- Name in top corner -->
-			<div class="absolute top-4 left-4 text-sm opacity-75">
+			<!-- Name in top right corner -->
+			<div class="absolute top-4 right-4 text-lg opacity-75 bg-black/30 px-3 py-1 rounded">
 				{me?.name}
 			</div>
 
-			<div class="text-center space-y-8">
+			<div class="text-center space-y-12 px-4">
 				<!-- Position Display -->
-				<div class="space-y-2">
-					<h2 class="text-xl text-gray-200">Your Position</h2>
-					<div class="text-4xl font-mono font-bold">
+				<div class="space-y-4">
+					<h2 class="text-2xl text-gray-200">Position</h2>
+					<div class="text-6xl font-mono font-bold">
 						[{me?.position ? me.position.join(', ') : 'N/A'}]
 					</div>
 				</div>
 
 				<!-- Fitness Score -->
-				<div class="space-y-2">
-					<h2 class="text-xl text-gray-200">Fitness Score</h2>
-					<div class="text-6xl font-bold animate-pulse">
+				<div class="space-y-4">
+					<h2 class="text-2xl text-gray-200">Fitness</h2>
+					<div class="text-8xl font-bold animate-pulse">
 						{me?.fitness ? me.fitness.toFixed(2) : '???'}
 					</div>
 				</div>
-
-				<!-- Feedback Message with Image Border -->
-				<div class="space-y-4">
-					{#if me?.fitness}
-						<!-- Placeholder for future feedback image -->
-						<div class="w-32 h-32 border-4 border-white rounded-lg flex items-center justify-center bg-white/20 mx-auto">
-							<div class="text-4xl">
-								{me.fitness < 0.5 ? '🎯' : 
-								 me.fitness < 1.0 ? '👍' : 
-								 me.fitness < 2.0 ? '🔍' : 
-								 '🚀'}
-							</div>
-						</div>
-						<div class="text-xl font-semibold">
-							{me.fitness < 0.5 ? 'Great position!' : 
-							 me.fitness < 1.0 ? 'Good spot!' : 
-							 me.fitness < 2.0 ? 'Keep exploring!' : 
-							 'Keep searching!'}
-						</div>
-					{/if}
-				</div>
-
-				<!-- Speed Display (smaller) -->
-				{#if me?.velocity_magnitude}
-					<div class="space-y-1 opacity-75">
-						<h2 class="text-sm text-gray-200">Speed</h2>
-						<div class="text-lg">
-							{me.velocity_magnitude.toFixed(2)}
-						</div>
-					</div>
-				{/if}
 			</div>
 		</div>
 
@@ -261,8 +193,14 @@
 							<span>Fitness Score:</span>
 							<span class="font-mono text-xl font-bold">???</span>
 						</div>
+						<div class="flex justify-between items-center text-sm opacity-50">
+							<span>ID:</span>
+							<span class="font-mono">{me.id}</span>
+						</div>
 					</div>
 				</div>
+			{:else}
+				<div class="text-gray-400">Loading participant data...</div>
 			{/if}
 
 			<div class="text-center text-gray-400">
