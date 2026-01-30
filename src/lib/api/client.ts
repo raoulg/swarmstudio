@@ -1,10 +1,21 @@
 import { sessionState, latestSession, participantId, logEvent } from '$lib/stores/sessionStore';
 import { get } from 'svelte/store';
+import {
+	saveParticipantSession,
+	loadParticipantSession,
+	clearParticipantSession,
+	type ParticipantSessionData
+} from './localStorage';
 
-export const API_BASE_URL = 'http://145.38.195.118:8000/api';
-const WS_BASE_URL = 'ws://145.38.195.118:8000';
+// Use environment variable or fallback to localhost for development
+const API_HOST = import.meta.env.VITE_API_HOST || 'http://localhost:8000';
+export const API_BASE_URL = `${API_HOST}/api`;
+const WS_BASE_URL = API_HOST.replace('http', 'ws');
 
 let websocket: WebSocket | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const INITIAL_RECONNECT_DELAY = 1000; // 1 second
 
 // --- Types ---
 export interface SessionSummary {
@@ -24,7 +35,7 @@ function generateUUID(): string {
 }
 
 // --- WebSocket Management ---
-export function connectWebSocket(sessionId: string, partId: string) {
+export function connectWebSocket(sessionId: string, partId: string, isReconnect: boolean = false) {
 	if (websocket) {
 		websocket.close();
 	}
@@ -33,7 +44,9 @@ export function connectWebSocket(sessionId: string, partId: string) {
 	websocket = new WebSocket(url);
 
 	websocket.onopen = () => {
-		logEvent(`WebSocket connected for ${partId}`);
+		reconnectAttempts = 0; // Reset on successful connection
+		const message = isReconnect ? 'WebSocket reconnected' : 'WebSocket connected';
+		logEvent(`${message} for ${partId}`);
 	};
 
 	websocket.onmessage = (event) => {
@@ -49,6 +62,8 @@ export function connectWebSocket(sessionId: string, partId: string) {
 				// ONLY reset should do complete replacement
 				console.log('=== COMPLETE RESET ===');
 				sessionState.set(data.session);
+				// Clear localStorage on session reset
+				clearParticipantSession();
 				break;
 
 			case 'session_state':
@@ -85,17 +100,21 @@ export function connectWebSocket(sessionId: string, partId: string) {
 				break;
 
 			case 'participant_joined':
-				console.log('=== PARTICIPANT_JOINED DEBUG ===');
+			case 'participant_reconnected':
+				console.log(`=== ${data.type.toUpperCase()} DEBUG ===`);
 				console.log('Raw message data:', data);
 				console.log('data.participants:', data.participants);
 				console.log('Current sessionState before update:', get(sessionState));
 
-				// This is already correct - smart update only
-				// sessionState.update((s) => ({
-				// 	...s,
-				// 	participants: data.participants
-				// }));
-				console.log(`Participant ${data.participant_id} joined - waiting for updated participants list`);
+				const action = data.type === 'participant_reconnected' ? 'reconnected' : 'joined';
+				console.log(`Participant ${data.participant_id} ${action} - waiting for updated participants list`);
+				break;
+
+			case 'participant_connected':
+			case 'participant_disconnected':
+				console.log(`=== ${data.type.toUpperCase()} ===`);
+				console.log(`Participant ${data.participant_id} connection status changed`);
+				// Could update UI to show connection status if needed
 				break;
 
 			case 'participant_moved':
@@ -121,6 +140,20 @@ export function connectWebSocket(sessionId: string, partId: string) {
 	websocket.onclose = () => {
 		logEvent('WebSocket disconnected');
 		websocket = null;
+
+		// Attempt to reconnect if this was an unexpected disconnect
+		const savedSession = loadParticipantSession();
+		if (savedSession && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+			reconnectAttempts++;
+			const delay = INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1);
+			logEvent(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+
+			setTimeout(() => {
+				if (!websocket) { // Only reconnect if still disconnected
+					connectWebSocket(savedSession.sessionId, savedSession.participantId, true);
+				}
+			}, delay);
+		}
 	};
 
 	websocket.onerror = (err) => {
@@ -153,13 +186,34 @@ export async function createSession(adminKey: string, landscape: string, iterati
 	return response.json();
 }
 
-export async function joinSession(sessionCode: string) {
-	const response = await fetch(`${API_BASE_URL}/join/${sessionCode}`, { method: 'POST' });
+export async function joinSession(sessionCode: string, savedParticipantId?: string) {
+	const body = savedParticipantId ? JSON.stringify({ participant_id: savedParticipantId }) : '{}';
+
+	const response = await fetch(`${API_BASE_URL}/join/${sessionCode}`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body
+	});
+
 	if (!response.ok) throw new Error('Failed to join session');
 	const data = await response.json();
+
+	// Save to localStorage
+	const sessionData: ParticipantSessionData = {
+		sessionId: data.session_id,
+		sessionCode: sessionCode,
+		participantId: data.participant_id,
+		participantName: data.participant_name,
+		joinedAt: new Date().toISOString()
+	};
+	saveParticipantSession(sessionData);
+
+	// Update store
 	participantId.set(data.participant_id);
+
 	// Connect to WebSocket after successfully joining
-	connectWebSocket(data.session_id, data.participant_id);
+	connectWebSocket(data.session_id, data.participant_id, data.is_reconnect || false);
+
 	return data;
 }
 
@@ -187,8 +241,12 @@ export async function resetSession(adminKey: string, sessionId: string) {
 		headers: { 'X-Admin-Key': adminKey }
 	});
 	if (!response.ok) throw new Error('Failed to reset session');
+	// Note: localStorage is cleared via WebSocket 'session_reset' message handler
 	return response.json();
 }
+
+// Re-export localStorage utilities for convenience
+export { loadParticipantSession, saveParticipantSession, clearParticipantSession } from './localStorage';
 
 export async function reconnectToSession(sessionData: SessionSummary) {
 	sessionState.set({

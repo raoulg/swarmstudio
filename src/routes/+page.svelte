@@ -1,7 +1,9 @@
 <script lang="ts">
 	// src/routes/+page.svelte
+	import { onMount } from 'svelte';
 	import { sessionState, participantId } from '$lib/stores/sessionStore';
 	import { joinSession } from '$lib/api/client';
+	import { loadParticipantSession, clearParticipantSession } from '$lib/api/localStorage';
 
 	let sessionCode = '';
 	let errorMessage = '';
@@ -26,6 +28,26 @@
 		{ name: "Primordial Chaos", emoji: "🌋", description: "Pure randomness", bg: "bg-red-500" }
 	];
 
+	// Auto-reconnect on mount if saved session exists
+	onMount(async () => {
+		const savedSession = loadParticipantSession();
+		if (savedSession) {
+			console.log('Found saved session, attempting to reconnect:', savedSession);
+			isLoading = true;
+			try {
+				await joinSession(savedSession.sessionCode, savedSession.participantId);
+				console.log('Successfully reconnected to saved session');
+			} catch (error) {
+				console.error('Failed to reconnect to saved session:', error);
+				// Clear invalid saved session
+				clearParticipantSession();
+				errorMessage = 'Previous session expired. Please join again.';
+			} finally {
+				isLoading = false;
+			}
+		}
+	});
+
 	// Function to handle joining a session
 	async function handleJoin() {
 		if (!sessionCode) {
@@ -42,6 +64,15 @@
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	// Function to manually leave session (clear localStorage)
+	function handleLeave() {
+		clearParticipantSession();
+		participantId.set(null);
+		sessionState.set({ participants: [] });
+		errorMessage = '';
+		sessionCode = '';
 	}
 	$: {
 		// Map session phase to local movement state
@@ -234,10 +265,16 @@
 				</div>
 			{/if}
 
-
 			<div class="text-center text-gray-400">
 				<p class="text-lg">Waiting for next instruction...</p>
 			</div>
+
+			<button
+				on:click={handleLeave}
+				class="btn bg-red-500 hover:bg-red-600 text-white rounded-md px-4 py-2 text-sm"
+			>
+				Leave Session
+			</button>
 		</div>
 	{/if}
 
