@@ -14,10 +14,15 @@
 	$: config = session.config;
 	$: gridSize = config?.grid_size || 25;
 
-	// Sort participants by fitness (best first)
-	$: sortedParticipants = participants
-		.filter(p => p.fitness !== null && p.fitness !== undefined)
-		.sort((a, b) => (a.fitness || 999) - (b.fitness || 999));
+	// Sort participants by fitness (best first), but include all participants
+	// Participants with fitness come first (sorted by fitness), then those without
+	$: sortedParticipants = [
+		...participants
+			.filter(p => p.fitness !== null && p.fitness !== undefined)
+			.sort((a, b) => (a.fitness || 999) - (b.fitness || 999)),
+		...participants
+			.filter(p => p.fitness === null || p.fitness === undefined)
+	];
 
 	onMount(() => {
 		// If sessionId is provided in URL, connect to that session
@@ -136,7 +141,7 @@
 								<div>
 									<div class="font-semibold text-lg">{participant.name}</div>
 									<div class="text-sm text-gray-400">
-										Position: [{participant.position ? participant.position.join(', ') : 'N/A'}]
+										Position: [{participant.position ? participant.position.join(', ') : 'waiting'}]
 									</div>
 								</div>
 							</div>

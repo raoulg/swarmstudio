@@ -109,7 +109,15 @@ export function connectWebSocket(sessionId: string, partId: string, isReconnect:
 				console.log('Current sessionState before update:', get(sessionState));
 
 				const action = data.type === 'participant_reconnected' ? 'reconnected' : 'joined';
-				console.log(`Participant ${data.participant_id} ${action} - waiting for updated participants list`);
+				console.log(`Participant ${data.participant_id} ${action} - updating participants list`);
+
+				// Update session state with new participants list
+				if (data.participants) {
+					sessionState.update((s) => ({
+						...s,
+						participants: data.participants
+					}));
+				}
 				break;
 
 			case 'participant_connected':
