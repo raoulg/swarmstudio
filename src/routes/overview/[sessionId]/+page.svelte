@@ -118,52 +118,29 @@
 		
 		{#if sortedParticipants.length > 0}
 			<div class="flex-1 overflow-y-auto space-y-2">
-				{#each sortedParticipants as participant, index (participant.id)}
-					<div class="bg-gray-800 rounded-lg p-3 border-l-4" style="border-left-color: {participant.color || '#888'};">
-						<div class="flex items-center justify-between">
-							<div class="flex items-center gap-3">
-								<!-- Rank (only show during revealing phase) -->
-								{#if session.currentPhase === 'revealing'}
-									<div class="text-2xl font-bold text-yellow-400 w-8">
-										{#if index === 0}🥇
-										{:else if index === 1}🥈
-										{:else if index === 2}🥉
-										{:else}{index + 1}
-										{/if}
-									</div>
-								{:else}
-									<div class="text-2xl font-bold text-gray-500 w-8">
-										•
-									</div>
-								{/if}
-								
-								<!-- Participant Info -->
-								<div>
-									<div class="font-semibold text-lg flex items-center gap-2">
-										<span>{participant.name}</span>
-										<span class="text-xl">{participant.emojis ? participant.emojis.join('') : ''}</span>
-									</div>
-									<div class="text-sm text-gray-400">
-										Position: [{participant.position ? participant.position.join(', ') : 'waiting'}]
-									</div>
-								</div>
+				{#each sortedParticipants as participant (participant.id)}
+					<div class="bg-gray-800 rounded-lg p-3 border-l-4 transition-all" style="border-left-color: {participant.color || '#888'};">
+						<div class="flex items-center justify-between gap-4">
+							<!-- Name & Emojis -->
+							<div class="flex items-center gap-2 flex-grow min-w-0">
+								<span class="font-semibold text-lg truncate">{participant.name}</span>
+								<span class="text-xl flex-shrink-0">{participant.emojis ? participant.emojis.join('') : ''}</span>
 							</div>
 							
-							<!-- Fitness Score - only show during revealing phase -->
-							<div class="text-right">
+							<!-- Position -->
+							<div class="text-sm text-gray-400 font-mono whitespace-nowrap">
+								[{participant.position ? participant.position.join(', ') : '..'}]
+							</div>
+							
+							<!-- Fitness Score -->
+							<div class="text-right min-w-[4rem]">
 								{#if session.currentPhase === 'revealing'}
-									<div class="text-xl font-bold text-white">
+									<div class="text-xl font-bold text-white font-mono">
 										{participant.fitness?.toFixed(2) || 'N/A'}
 									</div>
 								{:else}
-									<div class="text-xl font-bold text-gray-500">
+									<div class="text-xl font-bold text-gray-500 font-mono">
 										???
-									</div>
-								{/if}
-								
-								{#if participant.velocity_magnitude}
-									<div class="text-sm text-gray-400">
-										Speed: {participant.velocity_magnitude.toFixed(1)}
 									</div>
 								{/if}
 							</div>
