@@ -128,13 +128,15 @@
 
 	{:else if movementState === 'moving' && targetPosition}
 		<!-- Movement Instruction Screen - Simplified -->
-		<div class="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-blue-900 text-white relative overflow-hidden">
-			<!-- Name in top right corner with bright background for testing -->
-			<div class="absolute top-4 right-4 text-lg font-bold bg-red-600 px-4 py-2 rounded shadow-lg z-50">
-				{me?.name} ✓
+		<div class="w-full h-screen flex flex-col bg-gradient-to-b from-purple-900 to-blue-900 text-white overflow-hidden">
+			<!-- Name at top -->
+			<div class="w-full text-center pt-6 pb-4">
+				<div class="inline-block text-xl font-bold bg-black/30 px-6 py-3 rounded-lg shadow-lg">
+					{me?.name}
+				</div>
 			</div>
 
-			<div class="text-center space-y-12 px-4">
+			<div class="flex-1 flex items-center justify-center text-center space-y-12 px-4">
 				<!-- Target Coordinates -->
 				<div class="space-y-6">
 					<h1 class="text-3xl font-semibold text-gray-300">Move to Position</h1>
@@ -148,28 +150,32 @@
 	{:else if movementState === 'revealing'}
 		<!-- Fitness Revelation Screen - Simplified -->
 		<div
-			class="w-full h-screen flex flex-col items-center justify-center text-white relative"
+			class="w-full h-screen flex flex-col text-white"
 			style="background: linear-gradient(135deg, {me?.color || '#888'}, {me?.color || '#888'}88);"
 		>
-			<!-- Name in top right corner -->
-			<div class="absolute top-4 right-4 text-lg opacity-75 bg-black/30 px-3 py-1 rounded">
-				{me?.name}
+			<!-- Name at top -->
+			<div class="w-full text-center pt-6 pb-4">
+				<div class="inline-block text-xl font-bold bg-black/30 px-6 py-3 rounded-lg shadow-lg">
+					{me?.name}
+				</div>
 			</div>
 
-			<div class="text-center space-y-12 px-4">
-				<!-- Position Display -->
-				<div class="space-y-4">
-					<h2 class="text-2xl text-gray-200">Position</h2>
-					<div class="text-6xl font-mono font-bold">
-						[{me?.position ? me.position.join(', ') : 'N/A'}]
+			<div class="flex-1 flex items-center justify-center text-center space-y-12 px-4">
+				<div class="space-y-12">
+					<!-- Position Display -->
+					<div class="space-y-4">
+						<h2 class="text-2xl text-gray-200">Position</h2>
+						<div class="text-6xl font-mono font-bold">
+							[{me?.position ? me.position.join(', ') : 'N/A'}]
+						</div>
 					</div>
-				</div>
 
-				<!-- Fitness Score -->
-				<div class="space-y-4">
-					<h2 class="text-2xl text-gray-200">Fitness</h2>
-					<div class="text-8xl font-bold animate-pulse">
-						{me?.fitness ? me.fitness.toFixed(2) : '???'}
+					<!-- Fitness Score -->
+					<div class="space-y-4">
+						<h2 class="text-2xl text-gray-200">Fitness</h2>
+						<div class="text-8xl font-bold animate-pulse">
+							{me?.fitness ? me.fitness.toFixed(2) : '???'}
+						</div>
 					</div>
 				</div>
 			</div>
