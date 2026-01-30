@@ -59,39 +59,80 @@
 		{#if config}
 			<div class="flex-1 flex items-center justify-center">
 				<div class="flex items-center gap-6">
-					<!-- The Grid with Trace Overlay -->
-					<div
-						class="relative border-4 border-blue-500 bg-gray-800 rounded-lg overflow-hidden shadow-2xl"
-						style="width: 60vh; max-width: 700px; aspect-ratio: 1 / 1;"
-					>
-						<!-- Grid cells -->
-						<div
-							class="grid absolute inset-0"
-							style="grid-template-columns: repeat({gridSize}, 1fr);"
-						>
-							{#each Array(gridSize * gridSize) as _, i}
-								{@const row = Math.floor(i / gridSize)}
-								{@const col = i % gridSize}
-								{@const participant = participants.find(p => p.position && p.position[0] === row && p.position[1] === col)}
+					<!-- The Grid with Trace Overlay and Axis Labels -->
+					<div class="relative p-12" style="width: 60vh; max-width: 700px;">
+						<!-- Y Axis Label -->
+						<div class="absolute -left-12 top-0 h-full flex items-center justify-center">
+							<span class="text-white/40 text-xs font-bold uppercase tracking-widest -rotate-90 whitespace-nowrap">Y Axis</span>
+						</div>
 
-								<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
-									{#if participant}
-										<div
-											class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
-											style="background-color: {participant.color || '#888'}; z-index: 10;"
-											title="{participant.name} - Grid: [{participant.position?.join(', ')}] - Actual: ({participant.continuous_position?.[0]?.toFixed(2) || 'N/A'}, {participant.continuous_position?.[1]?.toFixed(2) || 'N/A'}) - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
-										>
-											<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">
-												{participant.emojis ? participant.emojis.join('') : ''}
-											</span>
-										</div>
-									{/if}
-								</div>
+						<!-- Y Axis Numbers -->
+						<div class="absolute -left-6 top-12 bottom-12 w-6">
+							{#each Array.from({ length: gridSize }, (_, i) => i) as i}
+								{@const showEvery = gridSize > 15 ? 5 : 1}
+								{#if i % showEvery === 0 || i === gridSize - 1}
+									<div
+										class="absolute right-1 text-[10px] font-mono text-white/60 font-bold -translate-y-1/2"
+										style="bottom: {(i + 0.5) * (100 / gridSize)}%"
+									>
+										{i}
+									</div>
+								{/if}
 							{/each}
 						</div>
 
-						<!-- Trace Overlay -->
-						<TraceOverlay {gridSize} {participants} />
+						<!-- X Axis Label -->
+						<div class="absolute -bottom-12 left-0 w-full flex items-center justify-center">
+							<span class="text-white/40 text-xs font-bold uppercase tracking-widest whitespace-nowrap">X Axis</span>
+						</div>
+
+						<!-- X Axis Numbers -->
+						<div class="absolute -bottom-6 left-12 right-12 h-6">
+							{#each Array.from({ length: gridSize }, (_, i) => i) as i}
+								{@const showEvery = gridSize > 15 ? 5 : 1}
+								{#if i % showEvery === 0 || i === gridSize - 1}
+									<div
+										class="absolute top-1 text-[10px] font-mono text-white/60 font-bold -translate-x-1/2"
+										style="left: {(i + 0.5) * (100 / gridSize)}%"
+									>
+										{i}
+									</div>
+								{/if}
+							{/each}
+						</div>
+
+						<div
+							class="relative border-4 border-blue-500 bg-gray-800 rounded-lg overflow-hidden shadow-2xl aspect-square"
+						>
+							<!-- Grid cells -->
+							<div
+								class="grid absolute inset-0"
+								style="grid-template-columns: repeat({gridSize}, 1fr);"
+							>
+								{#each Array(gridSize * gridSize) as _, i}
+									{@const row = Math.floor(i / gridSize)}
+									{@const col = i % gridSize}
+									{@const participant = participants.find(p => p.position && p.position[0] === col && p.position[1] === (gridSize - 1 - row))}
+
+									<div class="relative w-full h-full border border-gray-600/30 bg-gray-800">
+										{#if participant}
+											<div
+												class="absolute inset-0 m-auto w-4/5 h-4/5 rounded-full border-2 border-white/80 transition-all duration-500 shadow-lg flex items-center justify-center"
+												style="background-color: {participant.color || '#888'}; z-index: 10;"
+												title="{participant.name} - Grid: [{participant.position?.join(', ')}] - Actual: ({participant.continuous_position?.[0]?.toFixed(2) || 'N/A'}, {participant.continuous_position?.[1]?.toFixed(2) || 'N/A'}) - Fitness: {participant.fitness?.toFixed(2) || 'N/A'}"
+											>
+												<span class="text-xs sm:text-sm pointer-events-none select-none filter drop-shadow-md">
+													{participant.emojis ? participant.emojis.join('') : ''}
+												</span>
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+
+							<!-- Trace Overlay -->
+							<TraceOverlay {gridSize} {participants} />
+						</div>
 					</div>
 
 					<!-- Vertical Fitness Legend -->

@@ -60,10 +60,10 @@
 			{@const prevEntry = getPreviousEntry(participant.id)}
 			{#if prevEntry && participant.position}
 				<line
-					x1={posToPercent(prevEntry.position[1]) + (50 / gridSize)}
-					y1={posToPercent(prevEntry.position[0]) + (50 / gridSize)}
-					x2={posToPercent(participant.position[1]) + (50 / gridSize)}
-					y2={posToPercent(participant.position[0]) + (50 / gridSize)}
+					x1={posToPercent(prevEntry.position[0]) + (50 / gridSize)}
+					y1={100 - posToPercent(prevEntry.position[1]) - (50 / gridSize)}
+					x2={posToPercent(participant.position[0]) + (50 / gridSize)}
+					y2={100 - posToPercent(participant.position[1]) - (50 / gridSize)}
 					stroke={traceLineColor}
 					stroke-width="0.8"
 					stroke-opacity="0.9"
@@ -78,7 +78,7 @@
 			{#if entries.length > 1}
 				<polyline
 					points={entries.map(e =>
-						`${posToPercent(e.position[1]) + (50 / gridSize)},${posToPercent(e.position[0]) + (50 / gridSize)}`
+						`${posToPercent(e.position[0]) + (50 / gridSize)},${100 - posToPercent(e.position[1]) - (50 / gridSize)}`
 					).join(' ')}
 					fill="none"
 					stroke={traceLineColor}
@@ -98,8 +98,8 @@
 				{@const opacity = 0.2 + (idx / entries.length) * 0.8}
 				{@const size = 0.4 + (idx / entries.length) * 0.6}
 				<circle
-					cx={posToPercent(entry.position[1]) + (50 / gridSize)}
-					cy={posToPercent(entry.position[0]) + (50 / gridSize)}
+					cx={posToPercent(entry.position[0]) + (50 / gridSize)}
+					cy={100 - posToPercent(entry.position[1]) - (50 / gridSize)}
 					r={size}
 					fill={entry.color || getParticipantColor(participant.id)}
 					opacity={opacity}
@@ -114,7 +114,7 @@
 			<!-- Draw path -->
 			<polyline
 				points={entries.map(e =>
-					`${posToPercent(e.position[1]) + (50 / gridSize)},${posToPercent(e.position[0]) + (50 / gridSize)}`
+					`${posToPercent(e.position[0]) + (50 / gridSize)},${100 - posToPercent(e.position[1]) - (50 / gridSize)}`
 				).join(' ')}
 				fill="none"
 				stroke={traceLineColor}
@@ -128,8 +128,8 @@
 				{@const opacity = 0.3 + (idx / entries.length) * 0.7}
 				{@const size = 0.5 + (idx / entries.length) * 0.8}
 				<circle
-					cx={posToPercent(entry.position[1]) + (50 / gridSize)}
-					cy={posToPercent(entry.position[0]) + (50 / gridSize)}
+					cx={posToPercent(entry.position[0]) + (50 / gridSize)}
+					cy={100 - posToPercent(entry.position[1]) - (50 / gridSize)}
 					r={size}
 					fill={entry.color || getParticipantColor(config.selectedParticipantId)}
 					opacity={opacity}
