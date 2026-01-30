@@ -77,10 +77,6 @@
 										{participant.emojis ? participant.emojis.join('') : ''}
 									</span>
 								</div>
-								<!-- Add participant name overlay for close-up viewing -->
-								<div class="absolute bottom-0 left-0 right-0 text-xs text-center text-white/60 truncate px-1">
-									{participant.name}
-								</div>
 							{/if}
 						</div>
 					{/each}
