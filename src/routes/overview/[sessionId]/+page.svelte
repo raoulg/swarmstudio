@@ -5,6 +5,7 @@
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/stores';
 	import TraceOverlay from '$lib/components/TraceOverlay.svelte';
+	import QRCode from 'qrcode';
 
 	// Get session ID from URL params if provided
 	$: sessionId = $page.params.sessionId;
@@ -14,6 +15,25 @@
 	$: participants = session.participants || [];
 	$: config = session.config;
 	$: gridSize = config?.grid_size || 25;
+	
+	// QR Code Generation
+	let qrCodeDataUrl = '';
+	const PUBLIC_URL = import.meta.env.VITE_APP_PUBLIC_URL || 'http://localhost:5173';
+	
+	$: if (session.code) {
+		// Generate QR code pointing to the public URL
+		// We could append ?code=... if the landing page supported it
+		QRCode.toDataURL(PUBLIC_URL, { 
+			width: 200, 
+			margin: 2,
+			color: {
+				dark: '#000000',
+				light: '#ffffff'
+			}
+		})
+		.then(url => qrCodeDataUrl = url)
+		.catch(err => console.error('Error generating QR code:', err));
+	}
 
 	// Sort participants by fitness (best first), but include all participants
 	// Participants with fitness come first (sorted by fitness), then those without
@@ -262,12 +282,18 @@
 		<!-- QR Code Section -->
 		{#if session.code}
 			<div class="mb-4 text-center">
-				<img
-					src="/qr.png"
-					alt="Join Session QR Code"
-					class="mx-auto mb-1 rounded-lg shadow-lg border-2 border-gray-600"
-					style="width: 120px; height: 120px;"
-				/>
+				{#if qrCodeDataUrl}
+					<img
+						src={qrCodeDataUrl}
+						alt="Join Session QR Code"
+						class="mx-auto mb-1 rounded-lg shadow-lg border-2 border-gray-600"
+						style="width: 120px; height: 120px;"
+					/>
+				{:else}
+					<div class="mx-auto mb-1 rounded-lg shadow-lg border-2 border-gray-600 bg-gray-700 flex items-center justify-center" style="width: 120px; height: 120px;">
+						<span class="text-xs text-gray-400">Loading...</span>
+					</div>
+				{/if}
 				<p class="text-xs text-gray-400">Scan to join session</p>
 			</div>
 		{/if}
