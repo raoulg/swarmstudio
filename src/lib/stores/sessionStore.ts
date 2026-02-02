@@ -38,6 +38,7 @@ export interface LogEntry {
 // Position history for tracing
 export interface PositionHistoryEntry {
 	position: [number, number];
+	normalized_position?: [number, number];
 	timestamp: number;
 	iteration?: number;
 	color?: string;
@@ -121,11 +122,18 @@ export function logEvent(message: string, data?: unknown) {
 export const latestSession = writable<{ code: string; id: string } | null>(null);
 
 // Helper to add position to history
-export function addPositionToHistory(participantId: string, position: [number, number], color?: string, iteration?: number) {
+export function addPositionToHistory(
+	participantId: string,
+	position: [number, number],
+	color?: string,
+	iteration?: number,
+	normalized_position?: [number, number]
+) {
 	participantHistory.update((history) => {
 		const participantPositions = history[participantId] || [];
 		const newEntry: PositionHistoryEntry = {
 			position,
+			normalized_position,
 			timestamp: Date.now(),
 			iteration,
 			color

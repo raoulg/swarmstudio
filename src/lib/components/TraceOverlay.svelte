@@ -95,11 +95,15 @@
 		{#each participants as participant}
 			{@const entries = getParticipantHistory(participant.id)}
 			{#each entries as entry, idx}
-				{@const opacity = 0.2 + (idx / entries.length) * 0.8}
-				{@const size = 0.4 + (idx / entries.length) * 0.6}
+				{@const opacity = 0.4 + (idx / entries.length) * 0.6}
+				{@const size = 0.8}
 				<circle
-					cx={posToPercent(entry.position[0]) + (50 / gridSize)}
-					cy={100 - posToPercent(entry.position[1]) - (50 / gridSize)}
+					cx={entry.normalized_position
+						? entry.normalized_position[0] * 100
+						: posToPercent(entry.position[0]) + (50 / gridSize)}
+					cy={entry.normalized_position
+						? 100 - entry.normalized_position[1] * 100
+						: 100 - posToPercent(entry.position[1]) - (50 / gridSize)}
 					r={size}
 					fill={entry.color || getParticipantColor(participant.id)}
 					opacity={opacity}
